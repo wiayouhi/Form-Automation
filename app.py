@@ -1,189 +1,209 @@
-import time, random, threading, requests
-import json
+import time, random, threading, requests, json
+import psutil  # <--- ส่วนที่เพิ่มมา: สำหรับดึงค่า CPU/RAM
 from queue import Queue
 from flask import Flask, render_template, request, Response, jsonify
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
-from requests.exceptions import RequestException
 
 app = Flask(__name__)
 
-# Global resources for thread management
+# Global resources
 count_lock = threading.Lock()
 job_queue = Queue()
 log_queue = Queue()
 stop_event = threading.Event()
 
-# ตัวแปรสำหรับนับผลลัพธ์
 SUCCESS_COUNT = [0]
 FAIL_COUNT = [0]
 TOTAL_JOBS = 0
 
 # =========================
-# Utils & Core Logic
+# Utils
 # =========================
-
 def fetch_fbzx(view_url):
-    """ดึงค่า fbzx จากหน้า viewform"""
     try:
         r = requests.get(view_url, timeout=5)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
         tag = soup.find("input", {"name": "fbzx"})
         return tag["value"] if tag else None
-    except RequestException as e:
-        # log_queue.put(f"❌ ERROR: Cannot fetch fbzx - {e}")
+    except:
         return None
 
 def submission_worker(post_url, fbzx, page_history, entries_map, mode, delay):
-    """ฟังก์ชัน Worker ที่รันในแต่ละ Thread เพื่อส่งฟอร์ม"""
-    while not job_queue.empty() and not stop_event.is_set():
+    while not stop_event.is_set():
         try:
-            # ดึงลำดับงานจาก Queue
+            # ดึงงานจากคิว (timeout เพื่อให้เช็ค stop_event ได้เรื่อยๆ)
             idx = job_queue.get(timeout=1)
         except:
-            continue # Queue empty
+            if job_queue.empty():
+                break
+            continue
 
-        time.sleep(delay) # หน่วงเวลาตามที่ตั้งค่า
+        if stop_event.is_set():
+            job_queue.task_done()
+            break
 
-        # 1. สร้าง Payload
+        time.sleep(delay)
+
         payload = {
             "fvv": "1", 
             "fbzx": fbzx, 
             "pageHistory": page_history,
-            "draftResponse": []
+            "draftResponse": [],
+            "partialResponse": "[null,null,\"" + fbzx + "\"]" 
         }
         
         for eid, val in entries_map.items():
             options = [v.strip() for v in val.split(',') if v.strip()]
+            if not options: continue
             
-            # การเลือกคำตอบ: Random หรือ Sequential
             if mode == 'R':
                 answer = random.choice(options)
             else:
-                # ใช้ idx ในการวนคำตอบแบบ Sequential
                 answer = options[idx % len(options)] 
-                
             payload[eid] = answer
 
-        # 2. ส่ง Request
         try:
             r = requests.post(post_url, data=payload, timeout=10)
             if r.status_code in (200, 302, 303):
-                status = f"✅ SUCCESS (HTTP {r.status_code})"
+                status = "SUCCESS"
                 with count_lock: SUCCESS_COUNT[0] += 1
             else:
-                status = f"❌ FAIL (HTTP {r.status_code})"
+                status = f"FAIL({r.status_code})"
                 with count_lock: FAIL_COUNT[0] += 1
-        except RequestException as e:
-            status = f"⚠️ ERROR ({type(e).__name__})"
+        except Exception as e:
+            status = "ERROR"
             with count_lock: FAIL_COUNT[0] += 1
         
-        # ส่ง Log กลับไปที่ Log Queue
-        log_queue.put(f"[{time.strftime('%H:%M:%S')}] #{idx+1} | {status} | Total: {SUCCESS_COUNT[0]}/{TOTAL_JOBS}")
+        log_queue.put(f"[{time.strftime('%H:%M:%S')}] #{idx+1} | {status}")
         job_queue.task_done()
 
 # =========================
-# Flask Routes
+# Routes
 # =========================
+@app.route('/ping', methods=['GET'])
+def ping():
+    return jsonify({"status": "ok", "timestamp": time.time()})
+
+# --- ส่วนที่เพิ่มมา: API สำหรับดึง CPU/RAM ---
+@app.route('/api/stats', methods=['GET'])
+def server_stats():
+    try:
+        # interval=None จะไม่บล็อกการทำงาน (non-blocking) 
+        # แต่มันจะเทียบค่าจากครั้งล่าสุดที่เรียก ซึ่งเหมาะสำหรับ Realtime UI
+        cpu = psutil.cpu_percent(interval=None)
+        ram = psutil.virtual_memory().percent
+        return jsonify({
+            "cpu": cpu,
+            "ram": ram
+        })
+    except Exception as e:
+        return jsonify({"cpu": 0, "ram": 0})
+# ----------------------------------------
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
+@app.route('/api/stop', methods=['POST'])
+def stop_process():
+    """API สำหรับสั่งหยุดการทำงานทันที"""
+    stop_event.set()
+    with job_queue.mutex:
+        job_queue.queue.clear()
+    log_queue.put("🛑 STOP SIGNAL RECEIVED. HALTING PROCESS...")
+    return jsonify({"message": "Stopping process..."})
+
 @app.route('/api/parse-url', methods=['POST'])
 def parse_url():
     url = request.json.get('url', '')
-    parsed = urlparse(url)
-    params = parse_qs(parsed.query)
-    entries = {k: v[0] for k, v in params.items() if k.startswith("entry.")}
-    return jsonify({"entries": entries})
+    try:
+        parsed = urlparse(url)
+        params = parse_qs(parsed.query)
+        entries = {k: v[0] for k, v in params.items() if k.startswith("entry.")}
+        return jsonify({"entries": entries})
+    except:
+        return jsonify({"entries": {}})
 
 @app.route('/api/stream')
 def stream():
-    """API สำหรับเริ่มการส่งฟอร์มด้วย Thread และส่ง Log (SSE)"""
     global job_queue, SUCCESS_COUNT, FAIL_COUNT, TOTAL_JOBS
     
-    # Reset สถานะและ Queue ทุกครั้งที่เริ่ม
-    job_queue = Queue()
-    log_queue.queue.clear() # Clear log queue
+    # Reset State
+    stop_event.clear()
+    with job_queue.mutex: job_queue.queue.clear()
+    with log_queue.mutex: log_queue.queue.clear()
     SUCCESS_COUNT[0] = 0
     FAIL_COUNT[0] = 0
-    stop_event.clear()
 
-    # 1. รับค่า Configuration
+    # Params
     form_url = request.args.get('url')
     TOTAL_JOBS = int(request.args.get('total', 1))
     bots = int(request.args.get('bots', 1))
     delay = float(request.args.get('delay', 0.5))
     mode = request.args.get('mode', 'R')
-    num_pages = int(request.args.get('pages', 1))
-    
-    entries_raw = request.args.get('entries')
-    entries_map = json.loads(entries_raw)
+    num_pages = int(request.args.get('pages', 1)) 
+    entries_map = json.loads(request.args.get('entries'))
 
-    # 2. เตรียม URL และ fbzx
+    # URL Logic
     base = form_url.split("?")[0].rstrip("/")
     if base.endswith(("viewform", "formResponse")):
         base = base.rsplit("/", 1)[0]
     post_url = f"{base}/formResponse"
     view_url = f"{base}/viewform"
     
+    # Fetch Token
     fbzx = fetch_fbzx(view_url)
-    
     if not fbzx:
-        def error_generator():
-            yield "data: ❌ ERROR: Cannot fetch fbzx token or URL is invalid.\n\n"
-        return Response(error_generator(), mimetype='text/event-stream')
+        return Response("data: ❌ Error: Cannot fetch fbzx token. Is the form public?\n\n", mimetype='text/event-stream')
 
-    # 3. คำนวณ pageHistory
     page_history = ",".join(str(i) for i in range(num_pages))
     
-    # 4. Populate Job Queue
+    # Fill Queue
     for i in range(TOTAL_JOBS):
         job_queue.put(i)
     
-    # 5. Start Worker Threads
+    # Start Threads
     threads = []
     for _ in range(bots):
-        thread = threading.Thread(
+        t = threading.Thread(
             target=submission_worker,
             args=(post_url, fbzx, page_history, entries_map, mode, delay)
         )
-        threads.append(thread)
-        thread.start()
+        t.daemon = True 
+        t.start()
+        threads.append(t)
 
-    # 6. Generator Function (Main thread for SSE)
     def process_generator():
-        start_time = time.time()
+        yield f"data: 🚀 Started: {TOTAL_JOBS} Jobs on {num_pages} Pages Form.\n\n"
         
-        yield f"data: 🚀 Starting process with {TOTAL_JOBS} submissions, {bots} bots, {num_pages} sections (History: {page_history}).\n\n"
-        
-        while SUCCESS_COUNT[0] + FAIL_COUNT[0] < TOTAL_JOBS:
-            if not log_queue.empty():
-                log_msg = log_queue.get()
-                yield f"data: {log_msg}\n\n"
+        while any(t.is_alive() for t in threads) or not log_queue.empty():
+            if stop_event.is_set() and job_queue.empty() and log_queue.empty():
+                break
+
+            while not log_queue.empty():
+                yield f"data: {log_queue.get()}\n\n"
             
-            # ป้องกันการหน่วง Main thread มากเกินไป
-            time.sleep(0.05) 
+            if SUCCESS_COUNT[0] + FAIL_COUNT[0] >= TOTAL_JOBS:
+                pass 
+                
+            time.sleep(0.1)
 
-        # รอให้ Log สุดท้ายถูกส่ง (LogQueue อาจจะช้ากว่าการนับเล็กน้อย)
         while not log_queue.empty():
-            log_msg = log_queue.get()
-            yield f"data: {log_msg}\n\n"
+            yield f"data: {log_queue.get()}\n\n"
 
-        duration = time.time() - start_time
-        yield f"data: 🏁 FINISHED! Total Time: {duration:.2f}s | Success: {SUCCESS_COUNT[0]} | Fail: {FAIL_COUNT[0]}\n\n"
-
-        # Cleanup threads
-        job_queue.join() 
-        for t in threads:
-            if t.is_alive():
-                 t.join(timeout=0.1)
-
+        if stop_event.is_set():
+             yield "data: 🛑 Process Stopped by User.\n\n"
+        else:
+             yield f"data: 🏁 FINISHED! Success: {SUCCESS_COUNT[0]} | Fail: {FAIL_COUNT[0]}\n\n"
 
     return Response(process_generator(), mimetype='text/event-stream')
 
-
 if __name__ == '__main__':
-    app.run(debug=True, threaded=True)
+    # เรียกครั้งแรกเพื่อให้ psutil เริ่มนับ cycle cpu
+    try:
+        psutil.cpu_percent()
+    except:
+        pass
+    app.run(debug=True, threaded=True, host='0.0.0.0', port=5000)
