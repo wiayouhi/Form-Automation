@@ -2,1417 +2,860 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Google Form Web Pro - Enhanced UI</title>
-    <link rel="icon" href="image_36d6ae.jpg" type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIA : Automate Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        /* Dark mode base with a subtle gradient background */
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --bg-dark: #0f172a;
+            --glass: rgba(30, 41, 59, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
         body {
-            background: #111827; /* Dark Slate */
-            background: radial-gradient(circle at 10% 20%, #1e293b 0%, #0f172a 100%);
-            min-height: 100vh;
-        }
-        /* Custom Scrollbar for better aesthetics */
-        #log-container::-webkit-scrollbar, #history-list::-webkit-scrollbar { width: 6px; }
-        #log-container::-webkit-scrollbar-thumb, #history-list::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
-        
-        /* Custom Focus/Shadow effects for inputs */
-        input:focus, select:focus {
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5); /* Indigo glow */
-        }
-
-        /* Keyframe for simple loading animation */
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .animate-spin-slow {
-            animation: spin 3s linear infinite;
-        }
-
-        /* Style for the ping indicator */
-        .ping-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-        }
-        .ping-green { background-color: #10b981; }
-        .ping-yellow { background-color: #f59e0b; }
-        .ping-red { background-color: #ef4444; }
-
-        /* --- SHINE LOOP KEYFRAME --- */
-        @keyframes shine-loop {
-            0% { transform: translateX(-1000%) skewX(-30deg); }
-            100% { transform: translateX(1000%) skewX(-30deg); }
-        }
-        /* --- SHINE EFFECT STYLES --- */
-        .shine-effect {
-            position: relative;
-            overflow: hidden; 
-            z-index: 1; 
-            border-radius: 12px; 
-            transition: box-shadow 0.3s ease, transform 0.1s; 
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); 
-        }
-
-        .shine-effect::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 30%; 
-            height: 100%;
-            background: rgba(255, 255, 255, 0.3); 
-            z-index: 2; 
-            /* ความเร็วเริ่มต้น: ช้าลงเล็กน้อย (1.5 วินาที) */
-            animation: shine-loop 1.5s linear infinite; 
-        }
-
-        /* คลาสใหม่: สำหรับ Turbo Shine (วิ่งเร็ว 0.5 วินาที) */
-        .shine-turbo::before {
-            animation-duration: 0.5s !important; 
-        }
-        /* --- END SHINE EFFECT STYLES --- */
-
-        /* --- BACKGROUND EMOJI ANIMATION --- */
-        @keyframes float-up {
-            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-            50% { opacity: 0.8; }
-            100% { transform: translateY(-50vh) rotate(360deg); opacity: 0; }
-        }
-        
-        .emoji-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: -10; 
-            pointer-events: none; 
-        }
-
-        .emoji-item {
-            position: absolute;
-            bottom: 0;
-            font-size: 30px; 
-            color: rgba(255, 255, 255, 0.1); 
-            animation-name: float-up;
-            animation-timing-function: linear;
-            animation-iteration-count: infinite;
-        }
-
-        /* --- SPEED MODIFIERS (ควบคุมความเร็ว) --- */
-        .speed-default .emoji-item {
-            animation-duration: 25s; 
-        }
-        .speed-turbo .emoji-item {
-            animation-duration: 6s; 
-        }
-        /* --- END BACKGROUND EMOJI ANIMATION --- */
-
-        /* --- DISCORD STATUS STYLES --- */
-        .avatar-container {
-            position: relative;
-            width: 60px;
-            height: 60px;
-            flex-shrink: 0;
-        }
-        .avatar-img {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid transparent; 
-        }
-        .status-dot {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            border: 4px solid #1f2937; 
-        }
-        .status-online { background-color: #3ba55d; } 
-        .status-idle { background-color: #faa81a; }    
-        .status-dnd { background-color: #ed4245; }     
-        .status-offline { background-color: #747f8d; } 
-        
-        .activity-img-container {
-            width: 48px;
-            height: 48px;
-            border-radius: 8px;
-            overflow: hidden;
-            flex-shrink: 0;
-            margin-right: 10px;
-            border: 1px solid #374151;
-            background-color: #0f172a;
-        }
-        .activity-img-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        /* --- END DISCORD STATUS STYLES --- */
-
-        /* --- INTRO ANIMATION STYLES --- */
-        #splash-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #0f172a; /* Same as background end color */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            transition: opacity 1s ease-out, visibility 1s ease-out;
-        }
-
-        @keyframes cube-flip {
-            0%, 100% {
-                transform: rotateY(0deg) rotateX(0deg);
-                opacity: 1;
-            }
-            25% {
-                transform: rotateY(90deg) rotateX(0deg);
-                opacity: 0.8;
-            }
-            50% {
-                transform: rotateY(90deg) rotateX(90deg);
-                opacity: 0.5;
-            }
-            75% {
-                transform: rotateY(0deg) rotateX(90deg);
-                opacity: 0.8;
-            }
-        }
-
-        .cube-loader {
-            width: 80px;
-            height: 80px;
-            perspective: 150px;
-        }
-        
-        .cube-inner {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            transform-style: preserve-3d;
-            animation: cube-flip 2.5s infinite ease-in-out;
-        }
-
-        .cube-face {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            background: rgba(99, 102, 241, 0.8); /* Indigo */
-            border: 2px solid #6366f1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 30px;
-            font-weight: bold;
+            background-color: var(--bg-dark);
+            font-family: 'Outfit', sans-serif;
             color: white;
-            opacity: 0.9;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .cube-face:nth-child(1) { transform: rotateY(0deg) translateZ(40px); background: #4f46e5; }
-        .cube-face:nth-child(2) { transform: rotateY(180deg) translateZ(40px); background: #4338ca; }
-        .cube-face:nth-child(3) { transform: rotateX(90deg) translateZ(40px); background: #3730a3; }
-        .cube-face:nth-child(4) { transform: rotateX(-90deg) translateZ(40px); background: #4f46e5; }
-        /* --- END INTRO ANIMATION STYLES --- */
+        /* --- Animated Background --- */
+        .bg-animate {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(236, 72, 153, 0.15) 0%, transparent 25%);
+            animation: bg-pulse 10s ease-in-out infinite alternate;
+        }
+        @keyframes bg-pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        .grid-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+        }
+
+        /* --- Glassmorphism --- */
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Custom Scrollbar --- */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+
+        /* --- Animations --- */
+        .slide-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(30px); }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
         
-        /* --- MODAL ANIMATION STYLES (NEW) --- */
-        .modal-enter {
-            opacity: 0;
-            transform: scale(0.9);
+        .fade-in { animation: fadeIn 0.8s ease-out forwards; opacity: 0; }
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        .pop-in { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; transform: scale(0.8); opacity: 0; }
+        @keyframes popIn { to { transform: scale(1); opacity: 1; } }
+
+        .tilt-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .tilt-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 10px 40px -10px rgba(99,102,241,0.3); }
+
+        /* --- Page Transition Animations --- */
+        .page-enter {
+            animation: pageEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        .modal-enter-active {
-            opacity: 1;
-            transform: scale(1);
-            transition: opacity 300ms ease-out, transform 300ms ease-out;
+        @keyframes pageEnter {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .modal-exit {
-            opacity: 1;
-            transform: scale(1);
+
+        .page-exit {
+            animation: pageExit 0.3s ease-in forwards;
         }
-        .modal-exit-active {
-            opacity: 0;
-            transform: scale(0.9);
-            transition: opacity 300ms ease-in, transform 300ms ease-in;
+        @keyframes pageExit {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.98); }
         }
-        /* --- END MODAL ANIMATION STYLES --- */
+
+        /* --- Custom Toast Notification --- */
+        #toast-container {
+            position: fixed; top: 20px; right: 20px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .toast-item {
+            animation: toastSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transform: translateX(100%); opacity: 0;
+        }
+        @keyframes toastSlideIn { to { transform: translateX(0); opacity: 1; } }
+        .toast-exit { animation: toastSlideOut 0.4s forwards; }
+        @keyframes toastSlideOut { to { transform: translateX(100%); opacity: 0; } }
+
+        /* --- Loader --- */
+        #loader {
+            position: fixed; inset: 0; z-index: 100;
+            background: #000;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.8s ease, visibility 0.8s;
+        }
+        .loader-text span {
+            display: inline-block; opacity: 0; transform: translateY(20px);
+            animation: reveal 0.5s forwards;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 900; font-size: 3rem;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        @keyframes reveal { to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Nav & Tags --- */
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(99,102,241,0.2), transparent);
+            border-left: 3px solid #818cf8;
+            color: #818cf8;
+        }
+        .tag-chip { animation: popIn 0.3s ease-out; }
+
+        /* --- Mobile Floating Menu --- */
+        .mobile-dock {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+        }
+        .mobile-nav-btn.active i {
+            color: #818cf8;
+            text-shadow: 0 0 15px rgba(129, 140, 248, 0.5);
+        }
     </style>
 </head>
-<body class="text-slate-100 p-4 sm:p-8">
+<body class="antialiased selection:bg-indigo-500 selection:text-white">
 
-    <div id="splash-screen">
-        <div class="cube-loader">
-            <div class="cube-inner">
-                <div class="cube-face">F</div>
-                <div class="cube-face">O</div>
-                <div class="cube-face">R</div>
-                <div class="cube-face">M</div>
-            </div>
-        </div>
-        <p class="mt-8 text-2xl font-semibold text-indigo-400">LOADING AUTOMATION PRO</p>
-        <p class="text-slate-400 mt-2 text-sm">Initializing hyper-drive cores...</p>
-    </div>
-    <div id="main-content" class="max-w-6xl mx-auto opacity-0 transition-opacity duration-1000">
-        <div id="emoji-bg-container" class="emoji-background speed-default">
-            </div>
-        <header class="text-center mb-8">
-            <h1 class="text-4xl sm:text-5xl font-extrabold text-indigo-400">
-                <span class="animate-spin-slow inline-block text-3xl">⚙️</span>
-                Form Automation Pro
-            </h1>
-            <p class="text-slate-400 mt-2">Powerful, Multi-threaded Google Form Submission Tool</p>
-        </header>
+    <div id="toast-container"></div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <div class="lg:col-span-1 bg-slate-800 p-6 rounded-2xl shadow-2xl border border-slate-700 h-fit space-y-4">
-                <h3 class="text-xl font-bold text-yellow-400 border-b border-slate-700 pb-2">📊 Real-time Status</h3>
-
-                <div class="p-3 bg-slate-700 rounded-lg shadow-inner">
-                    <p class="text-sm font-medium text-slate-300 flex items-center mb-1">
-                        <span id="ping-dot" class="ping-dot ping-yellow"></span>
-                        Server Status / Ping: <span id="ping-status" class="ml-1 text-yellow-300">Checking...</span>
-                    </p>
-                    <p class="text-xs text-slate-400">Latency to Flask Server.</p>
-                </div>
-                
-                <div class="p-4 bg-slate-700 rounded-xl shadow-lg border border-slate-600">
-                    <h4 class="text-sm font-bold text-green-400 mb-3 border-b border-slate-600 pb-2">📈 Submission Summary</h4>
-                    <div class="grid grid-cols-3 gap-2 text-center">
-                        <div>
-                            <p id="global-attempt-counter" class="text-2xl font-extrabold text-indigo-400">0</p>
-                            <p class="text-xs text-slate-400">Attempts</p>
-                        </div>
-                        <div>
-                            <p id="global-success-counter" class="text-2xl font-extrabold text-green-400">0</p>
-                            <p class="text-xs text-slate-400">Success</p>
-                        </div>
-                        <div>
-                            <p id="global-error-counter" class="text-2xl font-extrabold text-red-400">0</p>
-                            <p class="text-xs text-slate-400">Errors</p>
-                        </div>
-                    </div>
-                    <p id="global-completion-message" class="text-center mt-3 text-xs font-semibold text-slate-300 hidden">Session summary will appear here.</p>
-                </div>
-                
-                <div class="p-4 bg-slate-700 rounded-xl shadow-lg border border-slate-600">
-                    <h4 class="text-sm font-bold text-indigo-400 mb-3 border-b border-slate-600 pb-2 flex items-center">
-                        <span class="text-xl mr-2">💡</span> Guide & Tips
-                    </h4>
-                    
-                    <div class="mb-2">
-                        <button onclick="toggleGuide('guide-link')" class="w-full text-left flex justify-between items-center text-sm font-semibold text-slate-200 hover:text-indigo-300 transition-colors">
-                            <span>1. ลิ้งค์แบบ Prefill คืออะไร?</span>
-                            <span id="toggle-icon-guide-link" class="transform transition-transform duration-300">▼</span>
-                        </button>
-                        <div id="guide-link" class="hidden text-xs text-slate-400 pt-2 pl-3 border-l border-indigo-400 mt-1 space-y-1">
-                            <p>ใช้ลิ้งค์แบบ **Prefill Link** เท่านั้น (ที่มี `viewform?usp=pp_url...`) เพื่อให้ระบบดึง `entry.ID` ของแต่ละช่องคำถามมาใช้งาน</p>
-                            <p class="text-yellow-300 font-mono bg-slate-800 p-1 rounded">วิธีหา: กรอกคำตอบที่คุณต้องการล่วงหน้า > กด "รับลิ้งค์ที่กรอกล่วงหน้า"</p>
-                        </div>
-                    </div>
-
-                    <div class="mb-2">
-                        <button onclick="toggleGuide('guide-id')" class="w-full text-left flex justify-between items-center text-sm font-semibold text-slate-200 hover:text-indigo-300 transition-colors">
-                            <span>2. วิธีหา Entry ID ด้วยตนเอง</span>
-                            <span id="toggle-icon-guide-id" class="transform transition-transform duration-300">▼</span>
-                        </button>
-                        <div id="guide-id" class="hidden text-xs text-slate-400 pt-2 pl-3 border-l border-indigo-400 mt-1 space-y-1">
-                            <p>หาก Fetch ไม่ได้ ให้กด F12 (Inspect) บนฟอร์มจริง แล้วหา Tag Input/Textarea ที่มี attribute `name="entry.123456789"` นี่คือ Entry ID</p>
-                            <p class="text-red-300 font-mono bg-slate-800 p-1 rounded">⚠️ หาก ID ผิด การส่งข้อมูลจะล้มเหลว</p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <button onclick="toggleGuide('guide-mode')" class="w-full text-left flex justify-between items-center text-sm font-semibold text-slate-200 hover:text-indigo-300 transition-colors">
-                            <span>3. การทำงานของ Answer Mode</span>
-                            <span id="toggle-icon-guide-mode" class="transform transition-transform duration-300">▼</span>
-                        </button>
-                        <div id="guide-mode" class="hidden text-xs text-slate-400 pt-2 pl-3 border-l border-indigo-400 mt-1 space-y-1">
-                            <p>**Random (สุ่ม):** จะสุ่มคำตอบจากรายการที่คุณใส่ในช่อง Value (คั่นด้วยคอมม่า).</p>
-                            <p>**Sequential (เรียง):** จะใช้คำตอบตามลำดับที่คุณใส่ไว้ (เหมาะสำหรับทดสอบข้อมูลชุดเดิมซ้ำๆ).</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="p-4 bg-slate-700 rounded-xl shadow-lg border border-slate-600">
-                    <h4 class="text-sm font-bold text-indigo-400 mb-3 flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12.012 0C7.234 0 3.322 3.864 3.322 8.648c0 2.23 0.865 4.316 2.45 5.867 0.17 0.17 0.38 0.283 0.602 0.316 0.21.034 0.428 0.006 0.627 -0.076 0.198 -0.082 0.364 -0.218 0.49 -0.385l0.424 -0.565c0.166 -0.22 0.217 -0.496 0.147 -0.742 -0.237 -0.806 -0.362 -1.65 -0.362 -2.54 0 -4.843 3.912 -8.76 8.76 -8.76s8.76 3.917 8.76 8.76c0 0.89 -0.125 1.734 -0.362 2.54 -0.07 0.246 -0.019 0.522 0.147 0.742l0.424 0.565c0.126 0.167 0.292 0.303 0.49 0.385 0.199 0.082 0.417 0.11 0.627 0.076 0.222 -0.033 0.432 -0.146 0.602 -0.316 1.585 -1.551 2.45 -3.637 2.45 -5.867 0 -4.784 -3.912 -8.648 -8.696 -8.648h-0.012zM12.012 18.358c-1.397 0 -2.697 -0.626 -3.585 -1.716l-0.195 -0.236c-0.122 -0.148 -0.334 -0.218 -0.523 -0.187 -0.245 0.04 -0.473 0.13 -0.662 0.264l-2.007 1.488c-0.217 0.16 -0.49 0.203 -0.738 0.108 -0.247 -0.095 -0.44 -0.315 -0.518 -0.589 -0.08 -0.273 -0.007 -0.575 0.197 -0.78l1.378 -1.407c0.165 -0.168 0.25 -0.407 0.25 -0.655v-0.565c0 -0.478 0.162 -0.938 0.457 -1.31l0.395 -0.514c0.238 -0.308 0.373 -0.687 0.373 -1.085v-1.286c0 -0.335 -0.272 -0.607 -0.607 -0.607s-0.607 0.272 -0.607 0.607v1.286c0 0.57 -0.19 1.107 -0.536 1.513l-0.395 0.514c-0.51 0.665 -0.796 1.458 -0.796 2.293v0.565c0 0.648 -0.25 1.26 -0.697 1.708l-1.378 1.407c-0.204 0.205 -0.277 0.507 -0.197 0.78 0.078 0.274 0.271 0.494 0.518 0.589 0.248 0.095 0.52 0.052 0.738 -0.108l2.007 -1.488c0.189 -0.134 0.417 -0.224 0.662 -0.264 0.189 -0.031 0.401 0.039 0.523 0.187l0.195 0.236c0.888 1.09 2.188 1.716 3.585 1.716s2.697 -0.626 3.585 -1.716l0.195 -0.236c-0.122 -0.148 -0.334 -0.218 -0.523 -0.187 -0.245 0.04 -0.473 0.13 -0.662 0.264l2.007 1.488c0.217 0.16 0.49 0.203 0.738 0.108 0.247 -0.095 0.44 -0.315 0.518 -0.589 0.08 -0.273 0.007 -0.575 -0.197 -0.78l-1.378 -1.407c-0.165 -0.168 -0.25 -0.407 -0.25 -0.655v-0.565c0 -0.478 -0.162 -0.938 -0.457 -1.31l0.395 -0.514c-0.238 -0.308 -0.373 -0.687 -0.373 -1.085v-1.286c0 -0.335 -0.272 -0.607 -0.607 -0.607s-0.607 0.272 -0.607 0.607v1.286c0 0.57 0.19 1.107 0.536 1.513l0.395 0.514c0.51 0.665 0.796 1.458 0.796 2.293v0.565c0 0.648 0.25 1.26 0.697 1.708l1.378 1.407c0.204 0.205 0.277 0.507 0.197 0.78 -0.078 0.274 -0.271 0.494 -0.518 0.589 -0.248 0.095 -0.52 0.052 -0.738 -0.108l-2.007 -1.488c-0.189 -0.134 -0.417 -0.224 -0.662 -0.264 -0.189 -0.031 -0.401 0.039 -0.523 0.187l-0.195 0.236c-0.888 1.09 -2.188 1.716 -3.585 1.716z"></path>
-                        </svg>
-                        Discord Lanyard Status
-                    </h4>
-                    
-                    <div class="flex items-center space-x-4">
-                        <div class="avatar-container">
-                            <img id="discord-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar" class="avatar-img">
-                            <span id="discord-status-dot" class="status-dot status-offline"></span>
-                        </div>
-                        
-                        <div class="flex-grow">
-                            <p id="discord-username" class="text-lg font-bold text-slate-100">Loading...</p>
-                            <p id="discord-main-status" class="text-sm text-slate-300">Status: <span id="discord-state-text" class="text-yellow-400">Connecting...</span></p>
-                        </div>
-                    </div>
-
-                    <div id="discord-activity" class="mt-3 pt-3 border-t border-slate-600 hidden">
-                        <p class="text-xs font-semibold text-slate-400 mb-2">Activity:</p>
-                        <div class="flex items-center">
-                            <div class="activity-img-container">
-                                <img id="activity-large-image" src="" alt="Activity Image" class="hidden">
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p id="discord-activity-name" class="text-sm text-green-300 truncate font-mono"></p>
-                                <p id="discord-activity-details" class="text-xs text-slate-400 truncate"></p>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <div class="lg:col-span-2 bg-slate-800 p-6 rounded-2xl shadow-2xl border border-slate-700">
-                <h3 class="text-xl font-extrabold mb-4 text-blue-400 border-b border-slate-700 pb-2">⚙️ Configuration</h3>
-                
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Form URL (Prefill / View)</label>
-                        <div class="flex gap-2">
-                            <input id="url" type="text" class="flex-1 bg-slate-700 p-3 rounded-xl border border-slate-600 outline-none transition-all duration-300 focus:ring-2 focus:ring-indigo-500 text-sm" placeholder="https://docs.google.com/forms/...">
-                            <button onclick="fetchEntries()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-1 rounded-xl text-sm font-bold transition-transform hover:scale-105 shine-effect">Fetch Entry</button>
-                        </div>
-                    </div>
-
-                    <button onclick="addManualEntry()" class="w-full bg-slate-700 hover:bg-slate-600 py-2 rounded-xl text-sm font-medium text-purple-300 transition-colors border border-slate-600 shadow-md hover:shadow-lg shine-effect">
-                        + Add Manual Entry Field
-                    </button>
-
-                    <div id="entry-list" class="space-y-2 max-h-48 overflow-y-auto p-3 bg-slate-900 rounded-xl border border-slate-700">
-                        <p class="text-slate-500 text-xs text-center">> Entry data will appear here after fetching.</p>
-                    </div>
-
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="text-xs font-bold text-slate-300">Total Submissions</label>
-                            <input id="total" type="number" value="50" min="1" class="w-full bg-slate-700 p-3 rounded-xl border border-slate-600 transition-shadow">
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-300">Bots / Threads</label>
-                            <input id="bots" type="number" value="10" min="1" class="w-full bg-slate-700 p-3 rounded-xl border border-slate-600 transition-shadow">
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-orange-300">Number of Sections (หน้า)</label>
-                            <input id="pages" type="number" value="1" min="1" class="w-full bg-slate-700 p-3 rounded-xl border border-slate-600 transition-shadow">
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-300">Delay per Bot (s)</label>
-                            <input id="delay" type="number" value="0.5" step="0.1" class="w-full bg-slate-700 p-3 rounded-xl border border-slate-600 transition-shadow">
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-300">Answer Mode</label>
-                            <select id="mode" class="w-full bg-slate-700 p-3 rounded-xl border border-slate-600 transition-shadow">
-                                <option value="R">Random (สุ่ม)</option>
-                                <option value="S">Sequential (เรียง)</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="flex gap-4 mt-6"> 
-                        <button onclick="startProcess()" id="start-btn" class="w-full bg-green-600 hover:bg-green-500 py-4 rounded-xl font-extrabold text-lg transition-all duration-300 ease-in-out shadow-lg shadow-green-900/40 hover:scale-[1.02] shine-effect">
-                            🚀 START AUTOMATION
-                        </button>
-                        <button onclick="stopProcess(false)" id="stop-btn" class="w-0 opacity-0 scale-0 bg-red-600 hover:bg-red-500 py-4 rounded-xl font-extrabold text-lg transition-all duration-300 ease-in-out origin-right shadow-lg shadow-red-900/40" disabled>
-                            🛑 หยุด
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-3 bg-slate-800 p-6 rounded-2xl shadow-2xl border border-slate-700 flex flex-col">
-                <h3 class="text-xl font-extrabold mb-4 text-purple-400 border-b border-slate-700 pb-2">💻 Live Activity Logs (Max 100 Lines)</h3>
-                <div id="log-container" class="flex-1 bg-black rounded-xl p-4 font-mono text-xs overflow-y-auto h-[400px] border border-slate-700">
-                    <div class="text-slate-500">> Ready. Paste URL and click Fetch.</div>
-                </div>
-                <button onclick="clearLog()" class="mt-4 text-xs text-slate-400 hover:text-white underline self-start transition-colors hover:scale-[1.05]">Clear Logs</button>
-            </div>
-
-        </div>
-    </div>
-    
-    <footer class="max-w-6xl mx-auto mt-10 p-4 text-center text-slate-500 text-sm">
-    <button onclick="showHistoryModal()" class="inline-flex items-center bg-purple-600 hover:bg-purple-500 px-8 py-3 rounded-xl font-extrabold text-white text-base transition-all duration-300 ease-in-out shadow-xl shadow-purple-900/50 hover:scale-[1.05] shine-effect mb-6">
-        <span class="text-xl mr-2">📜</span>
-        ดูประวัติการใช้งาน
-        <span class="text-xl ml-2">🕒</span>
-    </button>
-    <div class="flex justify-center space-x-6 mb-4">
-    <a href="https://github.com/wiayouhi" target="_blank" class="text-slate-400 hover:text-indigo-400 transition-colors transform hover:scale-110" aria-label="GitHub">
-        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.082-.742.086-.725.086-.725 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.304.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.302-.536-1.521.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.046.138 3.003.404 2.293-1.552 3.301-1.23 3.301-1.23.653 1.655.241 2.874.118 3.176.766.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.474 5.923.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.309 24 12 24 5.373 18.627 0 12 0z"/></svg>
-    </a>
-    <a href="https://www.instagram.com/thanawat.wia/" target="_blank" class="text-slate-400 hover:text-pink-500 transition-colors transform hover:scale-110" aria-label="Instagram">
-        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.278.261 2.148.558 2.913.306.789.717 1.459 1.384 2.126s1.337 1.078 2.126 1.384c.766.297 1.636.499 2.914.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.278-.06 2.148-.261 2.913-.558.789-.306 1.459-.717 2.126-1.384s1.078-1.337 1.384-2.126c.297-.766.499-1.636.558-2.914.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.278-.261-2.148-.558-2.913a5.8 5.8 0 0 0-1.384-2.126 5.8 5.8 0 0 0-2.126-1.384c-.766-.297-1.636-.499-2.914-.558C15.667.012 15.26 0 12 0zm0 2.163c2.72 0 3.064.01 4.12.062 1.036.05 1.79.243 2.19.4a3.6 3.6 0 0 1 1.317.822 3.6 3.6 0 0 1 .822 1.317c.157.4.348 1.154.4 2.19.052 1.056.062 1.4.062 4.12s-.01 3.064-.062 4.12c-.05 1.036-.243 1.79-.4 2.19a3.6 3.6 0 0 1-.822 1.317 3.6 3.6 0 0 1-1.317.822c-.4.157-1.154.348-2.19.4-1.056.052-1.4.062-4.12.062s-3.064-.01-4.12-.062c-1.036-.05-1.79-.243-2.19-.4a3.6 3.6 0 0 1-1.317-.822 3.6 3.6 0 0 1-.822-1.317c-.157-.4-.348-1.154-.4-2.19-.052-1.056-.062-1.4-.062-4.12s.01-3.064.062-4.12c.05-1.036.243-1.79.4-2.19a3.6 3.6 0 0 1 .822-1.317 3.6 3.6 0 0 1 1.317-.822c.4-.157 1.154-.348 2.19-.4 1.056-.052 1.4-.062 4.12-.062zm0 3.655a6.182 6.182 0 1 0 0 12.364 6.182 6.182 0 0 0 0-12.364zm0 10.165a3.983 3.983 0 1 1 0-7.966 3.983 3.983 0 0 1 0 7.966zM18.89 4.318a1.455 1.455 0 1 0 0 2.91 1.455 1.455 0 0 0 0-2.91z"/>
-        </svg>
-    </a>
-    <a href="https://wianodehost.web.app" target="_blank" class="text-slate-400 hover:text-blue-400 transition-colors transform hover:scale-110" aria-label="Website/Portfolio">
-        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm1.758 1.956c3.411.458 6.002 3.398 6.002 6.944 0 3.193-2.02 5.918-4.908 6.643v-2.09c.725-.262 1.25-.975 1.25-1.796 0-1.104-.896-2-2-2h-2v-3h2c1.104 0 2-.896 2-2 0-.82-.525-1.534-1.25-1.796v-2.09c3.084.664 5.356 3.493 5.356 6.836 0 3.866-3.134 7-7 7S5 15.866 5 12c0-3.343 2.272-6.172 5.356-6.836v2.09c-.725.262-1.25.975-1.25 1.796 0 1.104.896 2 2 2h2v3h-2c-1.104 0-2 .896-2 2 0 .82.525 1.534 1.25 1.796v2.09c-2.888-.725-4.908-3.45-4.908-6.643 0-3.546 2.59-6.486 6.002-6.944V0h-1c-5.523 0-10 4.477-10 10s4.477 10 10 10 10-4.477 10-10c0-2.315-.81-4.43-2.158-6.144z"/>
-        </svg>
-    </a>
-</div>
-        <p>Built with ❤️ by Thanawat_Wia.</p>
-        <p class="mt-1 text-xs text-slate-600">Form Automation Pro V1.0</p>
-    </footer>
-    
-    <div id="cookie-banner" class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-sm p-4 text-center transform translate-y-full transition-transform duration-500 ease-out z-50 shadow-[0_0_20px_rgba(0,0,0,0.8)] border-t border-indigo-700">
-        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between">
-            <p class="text-sm text-slate-200 mb-3 md:mb-0 mr-4">
-                🍪 เราใช้คุกกี้เพื่อเก็บการตั้งค่าและประวัติการใช้งานของคุณ การใช้ต่อถือเป็นการยอมรับนโยบายคุกกี้ของเรา
-            </p>
-            <div class="flex space-x-3">
-                <button onclick="setCookieConsent('accept')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                    ยอมรับทั้งหมด
-                </button>
-                <button onclick="setCookieConsent('reject')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                    ปฏิเสธ
-                </button>
-            </div>
+    <div id="loader">
+        <div class="loader-text space-x-2">
+            <span style="animation-delay: 0.1s">W</span>
+            <span style="animation-delay: 0.2s">I</span>
+            <span style="animation-delay: 0.3s">A</span>
+            <span style="animation-delay: 0.4s">_</span>
+            <span style="animation-delay: 0.5s">P</span>
+            <span style="animation-delay: 0.6s">R</span>
+            <span style="animation-delay: 0.7s">O</span>
         </div>
     </div>
 
-    <div id="history-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex justify-center items-center">
-    <div id="history-modal-content" class="bg-slate-800 p-6 rounded-2xl shadow-2xl border border-indigo-600 transition-all duration-500 ease-in-out flex flex-col modal-exit 
-         w-[90%] max-w-3xl h-[60vh]" data-maximized="false">
-        <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
-            <h2 class="text-2xl font-extrabold text-indigo-400 flex items-center">
-                <span class="mr-2">📜</span> ประวัติการใช้งาน 
-            </h2>
-            <div class="flex space-x-2">
-                <button onclick="toggleMaximizeHistory()" id="maximize-btn" class="text-slate-400 hover:text-indigo-400 text-xl font-bold transition-colors p-1" aria-label="Maximize">
-                    <svg id="maximize-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
-                    </svg>
-                </button>
-                <button onclick="hideHistoryModal()" class="text-slate-400 hover:text-red-400 text-2xl font-bold transition-colors p-1" aria-label="Close">
-                    &times;
-                </button>
-            </div>
-        </div>
+    <div class="bg-animate"></div>
+    <div class="grid-bg"></div>
+
+    <div class="flex h-screen overflow-hidden max-w-[1600px] mx-auto relative">
         
-        <div id="history-list" class="flex-1 overflow-y-auto space-y-3 p-2">
+        <aside class="hidden md:flex w-64 glass-panel border-r border-slate-700 flex-col z-20 transition-all duration-300">
+            <div class="p-6 flex items-center justify-start">
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-robot text-white text-lg"></i>
+                </div>
+                <h1 class="ml-4 text-xl font-bold tracking-wider">AUTO<span class="text-indigo-400">PRO</span></h1>
             </div>
 
-        <div class="mt-4 pt-4 border-t border-slate-700 flex justify-between">
-            <button onclick="clearHistory(); hideHistoryModal()" class="text-sm font-semibold text-red-500 hover:text-red-400 transition-colors underline">
-                ล้างประวัติทั้งหมด
-            </button>
-            <p class="text-xs text-slate-500">เก็บประวัติล่าสุด 20 รายการ</p>
+            <nav class="mt-8 flex-1 space-y-2 px-2">
+                <button onclick="switchTab('home')" id="nav-home" class="nav-item w-full flex items-center p-3 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all active">
+                    <i class="fa-solid fa-house w-6 text-center"></i>
+                    <span class="ml-3 font-medium">Overview</span>
+                </button>
+                <button onclick="switchTab('tool')" id="nav-tool" class="nav-item w-full flex items-center p-3 text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg transition-all">
+                    <i class="fa-solid fa-bolt w-6 text-center"></i>
+                    <span class="ml-3 font-medium">Automation Console</span>
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-700/50 space-y-3">
+                <div class="glass-panel p-3 rounded-xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase">Server Load</span>
+                        <i class="fa-solid fa-server text-indigo-400 text-xs"></i>
+                    </div>
+                    <div class="space-y-2">
+                        <div>
+                            <div class="flex justify-between text-[10px] text-slate-300 mb-1">
+                                <span>CPU</span>
+                                <span id="cpu-val" class="text-indigo-300">0%</span>
+                            </div>
+                            <div class="h-1 bg-slate-700 rounded-full overflow-hidden">
+                                <div id="cpu-bar" class="h-full bg-indigo-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[10px] text-slate-300 mb-1">
+                                <span>RAM</span>
+                                <span id="ram-val" class="text-pink-300">0%</span>
+                            </div>
+                            <div class="h-1 bg-slate-700 rounded-full overflow-hidden">
+                                <div id="ram-bar" class="h-full bg-pink-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-3 rounded-xl flex items-center space-x-3">
+                    <div class="relative">
+                        <div id="ping-dot" class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase">Latency</p>
+                        <p id="ping-val" class="text-xs font-mono font-bold text-emerald-400">...</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto relative p-4 md:p-8 scroll-smooth pb-32 md:pb-8">
+            
+            <header class="md:hidden flex justify-between items-center mb-6 px-2">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-pink-500 rounded-lg flex items-center justify-center">
+                        <i class="fa-solid fa-robot text-white text-xs"></i>
+                    </div>
+                    <h2 class="text-lg font-bold">WIA DEV</h2>
+                </div>
+                <div id="clock-mobile" class="text-sm font-mono text-indigo-300 bg-slate-800/50 px-3 py-1 rounded-full border border-slate-700">00:00</div>
+            </header>
+
+            <section id="section-home" class="space-y-6 max-w-6xl mx-auto page-enter">
+                
+                <div class="glass-panel rounded-3xl p-8 md:p-14 relative overflow-hidden slide-up group">
+                    <div class="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-indigo-600/20 rounded-full blur-3xl group-hover:bg-indigo-600/30 transition-all duration-700"></div>
+                    <div class="relative z-10">
+                        <div class="inline-flex items-center px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-bold mb-6 animate-pulse">
+                            <span class="flex w-2 h-2 bg-indigo-500 rounded-full mr-2"></span> SYSTEM OPERATIONAL
+                        </div>
+                        <h1 class="text-4xl md:text-7xl font-black mb-6 font-['Space_Grotesk'] leading-tight tracking-tight">
+                            DOMINATE <br>
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">YOUR WORKFLOW</span>
+                        </h1>
+                        <p class="text-slate-400 max-w-xl text-lg md:text-xl mb-10 leading-relaxed">
+                            สัมผัสประสบการณ์ Form Automation ระดับ Enterprise เร็ว แรง เสถียร ด้วยระบบ Multi-Thread Engine และ Smart Input System ใหม่ล่าสุด
+                        </p>
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <button onclick="switchTab('tool')" class="bg-white text-slate-900 px-8 py-4 rounded-full font-bold hover:scale-105 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.2)] flex items-center justify-center">
+                                LAUNCH CONSOLE <i class="fa-solid fa-rocket ml-2"></i>
+                            </button>
+                            <a href="https://github.com/wiayouhi" target="_blank" class="bg-slate-800/50 border border-slate-600 text-white px-8 py-4 rounded-full font-bold hover:bg-slate-800 transition-colors flex items-center justify-center">
+                                <i class="fa-brands fa-github mr-2"></i> GITHUB REPO
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-panel p-6 rounded-2xl tilt-card slide-up" style="animation-delay: 0.1s">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-400 text-xs uppercase tracking-widest font-bold">Bangkok Time</p>
+                                <h2 id="clock-time" class="text-4xl font-mono font-bold mt-2 text-white">--:--</h2>
+                                <p id="clock-date" class="text-indigo-400 text-sm mt-1">Syncing...</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-slate-800/50 flex items-center justify-center">
+                                <i class="fa-regular fa-clock text-xl text-slate-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-6 rounded-2xl tilt-card slide-up" style="animation-delay: 0.2s">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-400 text-xs uppercase tracking-widest font-bold">Weather Data</p>
+                                <div class="flex items-end mt-2">
+                                    <h2 id="weather-temp" class="text-4xl font-bold text-white">--</h2>
+                                    <span class="text-lg text-slate-400 mb-1 ml-1">°C</span>
+                                </div>
+                                <p id="weather-desc" class="text-emerald-400 text-sm mt-1 flex items-center"><i class="fa-solid fa-wifi text-[10px] mr-1"></i> Live</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-slate-800/50 flex items-center justify-center">
+                                <i id="weather-icon" class="fa-solid fa-cloud text-xl text-slate-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-6 rounded-2xl tilt-card slide-up" style="animation-delay: 0.3s">
+                        <div class="flex items-center gap-4">
+                            <div class="relative">
+                                <img src="https://github.com/wiayouhi.png" class="w-14 h-14 rounded-full border-2 border-indigo-500 shadow-lg shadow-indigo-500/20">
+                                <div class="absolute -bottom-1 -right-1 bg-slate-900 rounded-full p-1">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400 uppercase tracking-wider">Lead Developer</p>
+                                <h3 class="font-bold text-lg text-white">Thanawat Wia</h3>
+                                <div class="flex space-x-3 mt-1 text-slate-400">
+                                    <a href="#" class="hover:text-indigo-400 transition-colors"><i class="fa-solid fa-code"></i></a>
+                                    <a href="#" class="hover:text-pink-400 transition-colors"><i class="fa-brands fa-instagram"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6 md:p-8 rounded-2xl slide-up relative overflow-hidden" style="animation-delay: 0.4s">
+                    <div class="absolute -right-6 -top-6 text-slate-800/30 rotate-12">
+                        <i class="fa-brands fa-discord text-[150px]"></i>
+                    </div>
+                    
+                    <div class="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                        <div class="flex items-center gap-4 bg-slate-900/40 p-4 rounded-xl border border-slate-700/50 w-full md:w-auto min-w-[240px]">
+                            <div class="relative">
+                                <img id="discord-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" class="w-16 h-16 rounded-full border-2 border-slate-700/50 transition-all duration-500">
+                                <div id="discord-main-status" class="absolute bottom-0 right-0 w-5 h-5 bg-gray-500 border-4 border-[#13151b] rounded-full"></div>
+                            </div>
+                            <div>
+                                <h4 id="discord-username" class="font-bold text-lg text-white leading-tight">Loading...</h4>
+                                <p id="discord-tag" class="text-xs text-slate-400 font-mono">@...</p>
+                                <div class="mt-1 inline-block px-2 py-0.5 bg-slate-800 rounded text-[10px] text-slate-300 border border-slate-700">PRO USER</div>
+                            </div>
+                        </div>
+
+                        <div class="hidden md:block w-px h-16 bg-gradient-to-b from-transparent via-slate-600 to-transparent"></div>
+
+                        <div class="flex-1 w-full">
+                            <h3 class="text-xs font-bold text-indigo-400 uppercase mb-3 flex items-center">
+                                <i class="fa-solid fa-gamepad mr-2"></i> Current Activity
+                            </h3>
+                            <div class="flex items-center gap-4">
+                                <img id="discord-activity-img" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="w-12 h-12 rounded-lg bg-slate-800 object-cover opacity-50">
+                                <div>
+                                    <p id="discord-activity-name" class="font-bold text-white text-lg">No Game Detected</p>
+                                    <p id="discord-activity-details" class="text-sm text-slate-400">System Standing By</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="section-tool" class="hidden space-y-6 max-w-6xl mx-auto">
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold font-['Space_Grotesk']">Automation Console</h2>
+                        <p class="text-xs text-slate-400">Control Panel / <span class="text-indigo-400">Active</span></p>
+                    </div>
+                    <button onclick="window.location.reload()" class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center hover:bg-slate-700 text-slate-400 transition-colors">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <div class="lg:col-span-2 space-y-6">
+                        
+                        <div class="glass-panel p-5 md:p-6 rounded-2xl">
+                            <label class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2 block">
+                                <i class="fa-solid fa-link mr-1"></i> Target Form URL (Prefill Link)
+                            </label>
+                            <div class="flex flex-col md:flex-row gap-2">
+                                <input type="text" id="url" class="flex-1 bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-white placeholder-slate-600" placeholder="https://docs.google.com/forms/d/e/.../viewform?usp=pp_url...">
+                                <button onclick="fetchEntries()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-600/20 active:scale-95 transition-all flex justify-center items-center">
+                                    <i class="fa-solid fa-cloud-arrow-down mr-2"></i> FETCH
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel p-5 md:p-6 rounded-2xl min-h-[300px] flex flex-col">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-sm flex items-center">
+                                    <i class="fa-solid fa-list-check mr-2 text-pink-500"></i> Form Entries
+                                </h3>
+                                <button onclick="addManualEntry()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition-colors border border-slate-700">
+                                    <i class="fa-solid fa-plus mr-1"></i> Manual Add
+                                </button>
+                            </div>
+                            
+                            <div id="entry-list" class="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                <div class="h-full flex flex-col items-center justify-center text-slate-500 border-2 border-dashed border-slate-800 rounded-xl p-8">
+                                    <div class="w-12 h-12 bg-slate-800/50 rounded-full flex items-center justify-center mb-3">
+                                        <i class="fa-solid fa-arrow-up text-indigo-400"></i>
+                                    </div>
+                                    <p class="text-sm font-medium">Waiting for URL</p>
+                                    <p class="text-xs opacity-60">Paste URL and click Fetch to load entries</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel p-5 md:p-6 rounded-2xl">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 font-bold mb-1.5 ml-1">TOTAL JOBS</label>
+                                    <input type="number" id="total" value="50" class="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-3 text-center font-mono focus:border-indigo-500 focus:outline-none transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 font-bold mb-1.5 ml-1">THREADS</label>
+                                    <input type="number" id="bots" value="10" class="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-3 text-center font-mono focus:border-indigo-500 focus:outline-none transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 font-bold mb-1.5 ml-1">DELAY (S)</label>
+                                    <input type="number" id="delay" value="0.5" step="0.1" class="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-3 text-center font-mono focus:border-indigo-500 focus:outline-none transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-pink-400 font-bold mb-1.5 ml-1">PAGES</label>
+                                    <input type="number" id="pages" value="1" min="1" class="w-full bg-slate-900/50 border border-pink-500/50 rounded-xl p-3 text-center font-mono focus:border-pink-500 focus:outline-none transition-colors text-pink-400 font-bold">
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-3">
+                                <button onclick="startProcess()" id="btn-start" class="flex-1 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 font-bold text-lg shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:shadow-[0_0_30px_rgba(99,102,241,0.6)] hover:scale-[1.01] active:scale-95 transition-all relative overflow-hidden group text-white">
+                                    <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                                    <span class="relative z-10 flex items-center justify-center">
+                                        <i class="fa-solid fa-play mr-2"></i> START SYSTEM
+                                    </span>
+                                </button>
+                                
+                                <button onclick="stopProcess()" id="btn-stop" class="hidden w-20 md:w-32 rounded-xl bg-red-500/10 border border-red-500/50 text-red-400 font-bold hover:bg-red-500 hover:text-white transition-all active:scale-95">
+                                    STOP
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-1 flex flex-col gap-6">
+                        <div class="glass-panel p-5 rounded-2xl">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase mb-4">Realtime Metrics</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-xl text-center relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-emerald-500/10 blur-xl"></div>
+                                    <h4 id="stat-success" class="text-3xl font-black text-emerald-400 relative z-10">0</h4>
+                                    <p class="text-[10px] font-bold text-emerald-200/70 relative z-10 mt-1">SUCCESSFUL</p>
+                                </div>
+                                <div class="bg-red-500/5 border border-red-500/20 p-4 rounded-xl text-center relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-red-500/10 blur-xl"></div>
+                                    <h4 id="stat-fail" class="text-3xl font-black text-red-400 relative z-10">0</h4>
+                                    <p class="text-[10px] font-bold text-red-200/70 relative z-10 mt-1">FAILED</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel rounded-2xl flex-1 flex flex-col overflow-hidden border border-slate-700 h-[450px] md:h-auto shadow-2xl">
+                            <div class="bg-[#0b101b] p-3 px-4 flex justify-between items-center border-b border-slate-800">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fa-solid fa-terminal text-slate-500 text-xs"></i>
+                                    <span class="text-xs font-mono text-slate-400">root@wia-server:~</span>
+                                </div>
+                                <div class="flex space-x-1.5">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-slate-600"></div>
+                                    <div class="w-2.5 h-2.5 rounded-full bg-slate-600"></div>
+                                </div>
+                            </div>
+                            <div id="log-container" class="flex-1 bg-[#05080f] p-4 font-mono text-[11px] md:text-xs overflow-y-auto space-y-1.5 text-slate-300">
+                                <div class="text-indigo-400">> Initializing WIA Automate Pro V2.5...</div>
+                                <div class="text-emerald-400">> System interfaces loaded.</div>
+                                <div class="text-slate-500">> Waiting for command input...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+
+        <div class="md:hidden fixed bottom-6 left-6 right-6 z-50">
+            <div class="mobile-dock rounded-2xl p-2 flex justify-around items-center">
+                <button onclick="switchTab('home')" id="mob-nav-home" class="mobile-nav-btn active flex-1 py-3 rounded-xl transition-all flex flex-col items-center justify-center text-slate-400 active:bg-slate-800/50">
+                    <i class="fa-solid fa-house text-xl mb-1 transition-all"></i>
+                    <span class="text-[10px] font-bold">Home</span>
+                </button>
+                <div class="w-px h-8 bg-slate-700/50"></div>
+                <button onclick="switchTab('tool')" id="mob-nav-tool" class="mobile-nav-btn flex-1 py-3 rounded-xl transition-all flex flex-col items-center justify-center text-slate-400 active:bg-slate-800/50">
+                    <i class="fa-solid fa-bolt text-xl mb-1 transition-all"></i>
+                    <span class="text-[10px] font-bold">Console</span>
+                </button>
+            </div>
         </div>
+
     </div>
-</div>
-    <script src="https://kit.fontawesome.com/your-font-awesome-kit.js" crossorigin="anonymous"></script> 
 
     <script>
-        // ---------------------------------------------------
-// 5. Modal Logic (Final Robust Fix)
-// ---------------------------------------------------
-
-// Path Maximize/Expand (สี่มุมชี้ออก - โค้ดจาก HTML ของคุณ)
-const EXPAND_PATH = 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4';
-// Path Minimize/Contract (สี่มุมชี้เข้า - Path ที่ถูกต้องสำหรับการย่อ)
-const CONTRACT_PATH = 'M9 9L4 4M4 9V4m0 0h5M15 9l5-5m0 4V4m0 0h-5M9 15l-5 5m0-5v5m0 0h5M15 15l-5 5m5-5v5m0 0h-5';
-
-let isMaximized = false;
-const MAXIMIZE_CLASSES = 'w-full max-w-7xl h-full max-h-[90vh]'; 
-const MINIMIZE_CLASSES = 'w-[90%] max-w-3xl h-[60vh]'; 
-
-// Utility function to safely set/remove classes 
-function setModalClasses(element, classesToRemove, classesToAdd) {
-    if (classesToRemove) {
-        classesToRemove.split(' ').forEach(cls => {
-            if (cls.trim().length > 0) element.classList.remove(cls);
-        });
-    }
-    if (classesToAdd) {
-        classesToAdd.split(' ').forEach(cls => {
-            if (cls.trim().length > 0) element.classList.add(cls);
-        });
-    }
-}
-
-function showHistoryModal() {
-    const modal = document.getElementById('history-modal');
-    const modalContent = document.getElementById('history-modal-content');
-    const path = document.querySelector('#maximize-icon path'); 
-
-    // 1. Reset สถานะ: บังคับให้เป็น Minimize เสมอเมื่อเปิด
-    setModalClasses(modalContent, MAXIMIZE_CLASSES, MINIMIZE_CLASSES);
-    isMaximized = false; // รีเซ็ตสถานะ
-
-    // 2. ตั้งไอคอนเป็น Maximize (Expand)
-    if (path) {
-        path.setAttribute('d', EXPAND_PATH); 
-    }
-
-    // 3. เปิด Modal
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    
-    if (typeof displayHistory === 'function') {
-        displayHistory();
-    }
-}
-
-function hideHistoryModal() {
-    document.getElementById('history-modal').classList.remove('flex');
-    document.getElementById('history-modal').classList.add('hidden');
-}
-
-function toggleMaximizeHistory() {
-    const modalContent = document.getElementById('history-modal-content');
-    const path = document.querySelector('#maximize-icon path'); 
-
-    if (!path) {
-        console.error("SVG Path element not found inside #maximize-icon. Cannot toggle icon.");
-        return; 
-    }
-
-    if (!isMaximized) {
-        // สถานะ: เปลี่ยนเป็น Maximize
-        setModalClasses(modalContent, MINIMIZE_CLASSES, MAXIMIZE_CLASSES);
-        isMaximized = true;
-        
-        // อัปเดตไอคอนให้เป็น "ย่อ" (Contract)
-        path.setAttribute('d', CONTRACT_PATH); 
-    } else {
-        // สถานะ: เปลี่ยนเป็น Minimize
-        setModalClasses(modalContent, MAXIMIZE_CLASSES, MINIMIZE_CLASSES);
-        isMaximized = false;
-        
-        // อัปเดตไอคอนให้เป็น "ขยาย" (Expand)
-        path.setAttribute('d', EXPAND_PATH);
-    }
-}
-        // ---------------------------------------------------
-        // Global State & UI/UX Helpers
-        // ---------------------------------------------------
-        let totalSuccessCounter = 0; 
-        let totalErrorsCounter = 0; 
-        let totalAttemptsCounter = 0; 
-        let eventSource = null; // NEW: Global for EventSource
-        let consentStatus = localStorage.getItem('cookieConsent'); // NEW: Global for Consent
-        const HISTORY_KEY = 'formAutomationHistory'; // NEW: History Key
-
-        function createEntryField(id = '', value = '', isManual = false) {
-            const uniqueId = Math.random().toString(36).substring(2, 9);
+        // --- NEW: Custom Toast Notification System ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
             
-            return `
-                <div id="entry-${uniqueId}" class="flex flex-col mb-2 p-3 bg-slate-700 rounded-lg shadow-md border border-slate-600 transition-all duration-200">
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-[10px] text-blue-400 font-bold">${isManual ? 'MANUAL ID' : id}</span>
-                        ${isManual ? `<button onclick="removeEntry('${uniqueId}')" class="text-red-400 text-sm hover:text-red-300 font-bold leading-none transition-colors">x</button>` : ''}
-                    </div>
-                    <input type="text" 
-                           class="entry-id-input bg-transparent text-sm outline-none focus:border-b border-blue-400 py-1 mb-1 transition-all ${isManual ? '' : 'text-slate-400'}"
-                           value="${id}"
-                           placeholder="${isManual ? 'entry.123456789' : ''}"
-                           ${isManual ? '' : 'readonly'}>
-                    <input type="text" 
-                           data-id="${id}" 
-                           data-manual="${isManual}"
-                           value="${value}" 
-                           class="entry-value-input bg-transparent text-sm outline-none focus:border-b border-blue-400 py-1 transition-all"
-                           placeholder="Answers separated by comma (e.g., Ans1,Ans2,Ans3)">
-                    <p class="text-[10px] text-slate-400 mt-1">Answers separated by comma (e.g., Ans1,Ans2,Ans3)</p>
+            // Create toast element
+            const toast = document.createElement('div');
+            const colors = {
+                error: 'border-red-500 bg-red-500/10 text-red-200',
+                success: 'border-emerald-500 bg-emerald-500/10 text-emerald-200',
+                info: 'border-indigo-500 bg-indigo-500/10 text-indigo-200'
+            };
+            const icons = {
+                error: 'fa-circle-xmark',
+                success: 'fa-circle-check',
+                info: 'fa-circle-info'
+            };
+            
+            const colorClass = colors[type] || colors.info;
+            const iconClass = icons[type] || icons.info;
+
+            toast.className = `toast-item glass-panel border-l-4 ${colorClass} p-4 rounded-r-lg shadow-lg flex items-center gap-3 min-w-[300px]`;
+            toast.innerHTML = `
+                <i class="fa-solid ${iconClass} text-xl"></i>
+                <div class="flex-1">
+                    <h4 class="font-bold text-sm uppercase">${type}</h4>
+                    <p class="text-xs opacity-90">${message}</p>
                 </div>
             `;
+
+            container.appendChild(toast);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
+        // --- 1. SYSTEM INIT & ANIMATION ---
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
+                loader.style.opacity = '0';
+                
+                // Trigger page entry animation when loader finishes
+                document.getElementById('section-home').classList.add('page-enter');
+                
+                setTimeout(() => loader.style.visibility = 'hidden', 800);
+            }, 1500);
+        });
+
+        // --- 2. TAB NAVIGATION (With Transitions) ---
+        function switchTab(tab) {
+            const home = document.getElementById('section-home');
+            const tool = document.getElementById('section-tool');
+            
+            // Sidebar buttons
+            const navHome = document.getElementById('nav-home');
+            const navTool = document.getElementById('nav-tool');
+            
+            // Mobile buttons
+            const mobHome = document.getElementById('mob-nav-home');
+            const mobTool = document.getElementById('mob-nav-tool');
+
+            // Determine active/inactive
+            let current, next;
+            if(tab === 'home') {
+                if(!home.classList.contains('hidden')) return; // Already here
+                current = tool;
+                next = home;
+                
+                // Update Buttons
+                navHome.classList.add('active'); navTool.classList.remove('active');
+                mobHome.classList.add('active'); mobTool.classList.remove('active');
+            } else {
+                if(!tool.classList.contains('hidden')) return;
+                current = home;
+                next = tool;
+
+                navHome.classList.remove('active'); navTool.classList.add('active');
+                mobHome.classList.remove('active'); mobTool.classList.add('active');
+            }
+
+            // Animation Logic
+            current.classList.remove('page-enter');
+            current.classList.add('page-exit');
+
+            setTimeout(() => {
+                current.classList.add('hidden');
+                current.classList.remove('page-exit');
+                
+                next.classList.remove('hidden');
+                next.classList.add('page-enter');
+            }, 300); // Matches CSS duration
+        }
+
+        // --- 3. CLOCK & WEATHER & SERVER STATS ---
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('clock-time').innerText = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+            document.getElementById('clock-date').innerText = now.toLocaleDateString('en-US', {weekday:'short', day:'numeric', month:'short'});
+            document.getElementById('clock-mobile').innerText = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+        }
+        setInterval(updateTime, 1000); updateTime();
+
+        // --- NEW: Real Server Stats Fetcher ---
+        async function fetchServerStats() {
+            try {
+                // This expects an endpoint like /api/stats returning { cpu: 45, ram: 60 }
+                // If API doesn't exist, it will fail silently or show default
+                const res = await fetch('/api/stats');
+                if(res.ok) {
+                    const data = await res.json();
+                    
+                    document.getElementById('cpu-val').innerText = `${data.cpu}%`;
+                    document.getElementById('cpu-bar').style.width = `${data.cpu}%`;
+                    
+                    document.getElementById('ram-val').innerText = `${data.ram}%`;
+                    document.getElementById('ram-bar').style.width = `${data.ram}%`;
+                    
+                    // Optional: Color coding
+                    document.getElementById('cpu-bar').className = `h-full rounded-full transition-all duration-500 ${data.cpu > 80 ? 'bg-red-500' : 'bg-indigo-500'}`;
+                }
+            } catch(e) {
+                // Simulation for UI testing if no server (Remove this block in production if needed)
+                // const mockCpu = Math.floor(Math.random() * 30) + 10;
+                // const mockRam = Math.floor(Math.random() * 20) + 40;
+                // document.getElementById('cpu-val').innerText = `${mockCpu}%`;
+                // document.getElementById('cpu-bar').style.width = `${mockCpu}%`;
+                // document.getElementById('ram-val').innerText = `${mockRam}%`;
+                // document.getElementById('ram-bar').style.width = `${mockRam}%`;
+            }
+        }
+        // Update stats every 3 seconds
+        setInterval(fetchServerStats, 3000);
+
+        async function fetchWeather() {
+            try {
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=13.75&longitude=100.51&current_weather=true');
+                const data = await res.json();
+                document.getElementById('weather-temp').innerText = Math.round(data.current_weather.temperature);
+                document.getElementById('weather-desc').innerHTML = `<i class="fa-solid fa-wind mr-1"></i> ${data.current_weather.windspeed} km/h`;
+            } catch(e) {}
+        }
+        fetchWeather();
+
+        // --- 4. DISCORD LANYARD ---
+        const DISCORD_ID = "902739412172046427"; 
+        const ws = new WebSocket("wss://api.lanyard.rest/socket");
+        ws.onopen = () => ws.send(JSON.stringify({ op: 2, d: { subscribe_to_ids: [DISCORD_ID] } }));
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if(data.op === 1) setInterval(() => ws.send(JSON.stringify({ op: 3 })), data.d.heartbeat_interval);
+            if(data.t === "INIT_STATE" || data.t === "PRESENCE_UPDATE") updateDiscord(data.d);
+        };
+        
+        function updateDiscord(d) {
+            const user = d[DISCORD_ID] || d; 
+            if(!user) return;
+            
+            if(user.discord_user) {
+                document.getElementById('discord-username').innerText = user.discord_user.global_name || user.discord_user.username;
+                document.getElementById('discord-tag').innerText = `@${user.discord_user.username}`;
+                const av = `https://cdn.discordapp.com/avatars/${user.discord_user.id}/${user.discord_user.avatar}.png`;
+                if(document.getElementById('discord-avatar').src !== av) {
+                    document.getElementById('discord-avatar').src = av;
+                }
+            }
+
+            const statusColors = { online: 'bg-green-500', idle: 'bg-yellow-500', dnd: 'bg-red-500', offline: 'bg-gray-500' };
+            const color = statusColors[user.discord_status] || 'bg-gray-500';
+            document.getElementById('discord-main-status').className = `absolute bottom-0 right-0 w-5 h-5 border-4 border-[#13151b] rounded-full ${color}`;
+
+            const activity = user.activities.find(a => a.type === 0 || a.type === 2);
+            if(activity) {
+                document.getElementById('discord-activity-name').innerText = activity.name;
+                document.getElementById('discord-activity-details').innerText = activity.details || activity.state || "Playing";
+                if(activity.assets?.large_image) {
+                    let url = activity.assets.large_image.startsWith("mp:") 
+                        ? `https://media.discordapp.net/${activity.assets.large_image.replace("mp:", "")}`
+                        : `https://cdn.discordapp.com/app-assets/${activity.application_id}/${activity.assets.large_image}.png`;
+                    document.getElementById('discord-activity-img').src = url;
+                    document.getElementById('discord-activity-img').classList.remove('opacity-50');
+                }
+            }
+        }
+
+        // --- 5. NEW: TAGS INPUT SYSTEM ---
+        function createTagUI(containerId, value) {
+            if(!value.trim()) return;
+            const container = document.getElementById(containerId);
+            const span = document.createElement('span');
+            span.className = "tag-chip inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/20 border border-indigo-500/40 rounded-lg text-sm text-indigo-200";
+            span.dataset.value = value.trim();
+            span.innerHTML = `
+                ${value} 
+                <button onclick="this.parentElement.remove()" class="text-indigo-400 hover:text-white transition-colors w-4 h-4 flex items-center justify-center rounded-full hover:bg-indigo-500/50">
+                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                </button>
+            `;
+            container.appendChild(span);
+        }
+
+        function handleInputEnter(e, inputId, containerId) {
+            if (e.key === 'Enter') {
+                const input = document.getElementById(inputId);
+                createTagUI(containerId, input.value);
+                input.value = '';
+            }
+        }
+
+        function manualAddTag(inputId, containerId) {
+            const input = document.getElementById(inputId);
+            createTagUI(containerId, input.value);
+            input.value = '';
+        }
+
+        function createEntryCard(id, initialVal, isManual) {
+            const uid = Math.random().toString(36).substr(2, 9);
+            const card = document.createElement('div');
+            card.className = "bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 hover:border-indigo-500/50 transition-all fade-in";
+            card.id = `card-${uid}`;
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center gap-2 flex-1">
+                        <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
+                        <input value="${id}" class="bg-transparent text-xs font-mono text-slate-400 w-full focus:outline-none" ${isManual ? '' : 'readonly'} placeholder="entry.xxxx">
+                    </div>
+                    ${isManual ? `<button onclick="document.getElementById('card-${uid}').remove()" class="text-slate-600 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>` : ''}
+                </div>
+                
+                <div id="tags-${uid}" class="flex flex-wrap gap-2 mb-3 min-h-[30px]"></div>
+                
+                <div class="flex gap-2">
+                    <input id="input-${uid}" type="text" 
+                        class="flex-1 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none text-white placeholder-slate-600" 
+                        placeholder="Type answer & press Enter..."
+                        onkeypress="handleInputEnter(event, 'input-${uid}', 'tags-${uid}')">
+                    <button onclick="manualAddTag('input-${uid}', 'tags-${uid}')" class="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white px-3 rounded-lg transition-colors">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            `;
+            
+            return { card, uid };
+        }
+
+        async function fetchEntries() {
+            const url = document.getElementById('url').value;
+            const list = document.getElementById('entry-list');
+            
+            // UPDATED: Use custom Toast instead of alert
+            if(!url) return showToast("Please enter a valid URL", "error");
+            
+            list.innerHTML = `<div class="text-center py-8 text-indigo-400 animate-pulse"><i class="fa-solid fa-satellite-dish fa-spin mb-2"></i><br>Scanning Form Structure...</div>`;
+
+            try {
+                const res = await fetch('/api/parse-url', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({url}) });
+                const data = await res.json();
+                list.innerHTML = "";
+
+                if(Object.keys(data.entries).length === 0) {
+                    list.innerHTML = `<div class="text-center py-8 text-red-400">No entries found.</div>`;
+                    return;
+                }
+
+                for(const [k, v] of Object.entries(data.entries)) {
+                    const { card, uid } = createEntryCard(k, v, false);
+                    list.appendChild(card);
+                    if(v) v.split(',').forEach(val => createTagUI(`tags-${uid}`, val));
+                }
+                showToast("Form Structure Loaded!", "success"); // Success Toast
+            } catch(e) { 
+                list.innerHTML = `<div class="text-center py-8 text-red-400">Error Loading Data</div>`;
+                showToast("Failed to fetch form data", "error");
+            }
         }
 
         function addManualEntry() {
-            const container = document.getElementById('entry-list');
-            if (container.querySelector('.text-slate-500')) {
-                container.innerHTML = '';
-            }
-            container.innerHTML += createEntryField('', '', true);
-            container.lastElementChild.querySelector('.entry-id-input').focus(); 
+            const { card } = createEntryCard('', '', true);
+            document.getElementById('entry-list').appendChild(card);
         }
 
-        function removeEntry(uniqueId) {
-            const element = document.getElementById(`entry-${uniqueId}`);
-            if (element) {
-                element.remove();
-                const container = document.getElementById('entry-list');
-                if (container.children.length === 0) {
-                     container.innerHTML = "<p class='text-slate-500 text-xs text-center'>Entry data will appear here after fetching.</p>";
-                }
-            }
-        }
-        
-        // **NEW GUIDE TOGGLE FUNCTION**
-        function toggleGuide(id) {
-            const content = document.getElementById(id);
-            const icon = document.getElementById(`toggle-icon-${id}`);
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                icon.style.transform = 'rotate(180deg)';
-            } else {
-                content.classList.add('hidden');
-                icon.style.transform = 'rotate(0deg)';
-            }
+        // --- 6. PROCESS CONTROL ---
+        let evtSource;
+
+        async function stopProcess() {
+            await fetch('/api/stop', { method: 'POST' });
+            document.getElementById('btn-start').innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-2"></i> STOPPING...`;
         }
 
-
-        // ---------------------------------------------------
-        // 1. Fetch Entries (Unchanged)
-        // ---------------------------------------------------
-        async function fetchEntries() {
-            const url = document.getElementById('url').value;
-            const container = document.getElementById('entry-list');
-            container.innerHTML = `<p class='text-yellow-400 text-xs text-center flex items-center justify-center'><svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path></svg>Fetching...</p>`;
-
-            try {
-                // NOTE: This call will likely fail in a browser environment without a backend.
-                // Assuming /api/parse-url is a valid endpoint.
-                const res = await fetch('/api/parse-url', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({url})
-                });
-                const data = await res.json();
-                container.innerHTML = "";
-
-                if (Object.keys(data.entries).length === 0) {
-                    container.innerHTML = "<p class='text-red-400 text-xs text-center'>❌ No entry found. Ensure the URL is a prefill link.</p>";
-                    return;
-                }
-
-                for (const [id, val] of Object.entries(data.entries)) {
-                    container.innerHTML += createEntryField(id, val, false);
-                }
-            } catch (error) {
-                // Fallback for demo/missing backend:
-                if (url.includes('example.com')) {
-                    container.innerHTML = "";
-                    container.innerHTML += createEntryField('entry.123456789', 'ValueA,ValueB', false);
-                    container.innerHTML += createEntryField('entry.987654321', 'Random Text Answer', false);
-                    logContainer.innerHTML += "<div class='text-orange-400'>[WARNING] Using mock data for Fetch.</div>";
-                    return;
-                }
-                container.innerHTML = "<p class='text-red-400 text-xs text-center'>⚠️ Connection or URL error.</p>";
-            }
-        }
-
-        // ---------------------------------------------------
-        // UI Control Functions (Unchanged)
-        // ---------------------------------------------------
-        function setBackgroundSpeed(speedClass) {
-            const container = document.getElementById('emoji-bg-container');
-            container.classList.remove('speed-default', 'speed-turbo');
-            container.classList.add(speedClass);
-        }
-        
-        function setShineSpeed(isTurbo) {
-            const startBtn = document.getElementById('start-btn');
-            const fetchBtn = document.querySelector('.flex-1 + button'); 
-            
-            if (isTurbo) {
-                startBtn.classList.add('shine-turbo');
-                fetchBtn.classList.add('shine-turbo'); 
-            } else {
-                startBtn.classList.remove('shine-turbo');
-                fetchBtn.classList.remove('shine-turbo');
-            }
-        }
-        
-        // ---------------------------------------------------
-        // 3. Stop Process Function (UPDATED for animation)
-        // ---------------------------------------------------
-        function stopProcess(isComplete = true) {
-            const startBtn = document.getElementById('start-btn');
-            const stopBtn = document.getElementById('stop-btn');
-            const logContainer = document.getElementById('log-container');
-            const messageElement = document.getElementById('global-completion-message');
-
-            if (eventSource) {
-                eventSource.close();
-                eventSource = null;
-            }
-
-            // UI Reset
-            startBtn.disabled = false;
-            startBtn.innerHTML = isComplete 
-                ? "✅ FINISHED! Click to Run Again."
-                : "🛑 STOPPED! Click to Run Again.";
-            
-            // 1. Reset START button to full width
-            startBtn.classList.remove('w-3/4');
-            startBtn.classList.add('w-full'); 
-
-            // 2. Hide STOP button (Reverse Animation)
-            stopBtn.disabled = true;
-            stopBtn.classList.remove('w-1/4', 'opacity-100', 'scale-100');
-            stopBtn.classList.add('w-0', 'opacity-0', 'scale-0');
-
-            // Set speed back to DEFAULT
-            setBackgroundSpeed('speed-default');
-            setShineSpeed(false); 
-
-            // Log and Summary Update
-            if (!isComplete) {
-                logContainer.innerHTML += "<div class='text-red-500 font-bold'>[INTERRUPT] Process manually stopped by user.</div>";
-            }
-            
-            const message = isComplete 
-                ? `🏁 Session Complete! Success: ${totalSuccessCounter}, Errors: ${totalErrorsCounter}.`
-                : `🛑 Session Stopped! Success: ${totalSuccessCounter}, Errors: ${totalErrorsCounter}.`;
-            messageElement.innerText = message;
-            messageElement.classList.remove('hidden');
-
-            // Save history only if consent is given
-            if (consentStatus === 'accept') {
-                logUsage(isComplete ? 'FINISHED' : 'STOPPED');
-            }
-        }
-
-
-        // ---------------------------------------------------
-        // 2. Start Process and SSE Log Streaming (UPDATED for animation)
-        // ---------------------------------------------------
         function startProcess() {
-            const startBtn = document.getElementById('start-btn');
-            const stopBtn = document.getElementById('stop-btn');
-            const logContainer = document.getElementById('log-container');
-            const MAX_LOGS = 100; 
-            
+            const url = document.getElementById('url').value;
+            // UPDATED: Custom Toast
+            if(!url) return showToast("URL is required to start", "error");
+
             const entries = {};
-            document.querySelectorAll('#entry-list > div').forEach(entryDiv => {
-                const idInput = entryDiv.querySelector('.entry-id-input');
-                const valueInput = entryDiv.querySelector('.entry-value-input');
+            document.querySelectorAll('#entry-list > div').forEach(card => {
+                const entryId = card.querySelector('input[placeholder="entry.xxxx"]').value;
+                const tagSpans = card.querySelectorAll('.tag-chip');
+                const values = Array.from(tagSpans).map(span => span.dataset.value).join(',');
                 
-                const entryId = idInput.value.trim();
-                const entryValue = valueInput.value.trim();
-                
-                if (entryId && entryValue) {
-                    entries[entryId] = entryValue;
-                }
+                if(entryId && values) entries[entryId] = values;
             });
 
-            if (!document.getElementById('url').value || Object.keys(entries).length === 0) {
-                logContainer.innerHTML += "<div class='text-red-500'>[ERROR] Please provide URL and at least one valid entry field.</div>";
-                return;
-            }
-            
-            // Check Consent - Prevent tracking if rejected
-            if (consentStatus !== 'accept') {
-                logContainer.innerHTML += "<div class='text-orange-400'>[WARNING] Usage history logging disabled (Cookie rejected).</div>";
-            }
+            // UPDATED: Custom Toast
+            if(Object.keys(entries).length === 0) return showToast("Please add entries and answers", "error");
 
             const params = new URLSearchParams({
-                url: document.getElementById('url').value,
+                url: url,
                 total: document.getElementById('total').value,
                 bots: document.getElementById('bots').value,
                 delay: document.getElementById('delay').value,
-                mode: document.getElementById('mode').value,
-                pages: document.getElementById('pages').value, 
-                entries: JSON.stringify(entries)
+                pages: document.getElementById('pages').value,
+                entries: JSON.stringify(entries),
+                mode: 'R'
             });
 
-            // --- Reset all counters ---
-            totalSuccessCounter = 0;
-            totalErrorsCounter = 0;
-            totalAttemptsCounter = 0;
-            document.getElementById('global-attempt-counter').innerText = '0';
-            document.getElementById('global-success-counter').innerText = '0';
-            document.getElementById('global-error-counter').innerText = '0';
-            document.getElementById('global-completion-message').classList.add('hidden');
-            // --- END Reset ---
-
-            // Set speed to TURBO when starting
-            setBackgroundSpeed('speed-turbo');
-            setShineSpeed(true); 
-
-            logContainer.innerHTML = "<div class='text-blue-400 flex items-center'>[SYSTEM] <svg class='animate-spin ml-2 h-3 w-3 text-blue-400' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'><circle class='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' stroke-width='4'></circle><path class='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path></svg> Attempting to connect to stream... (Simulated)</div>";
+            const btn = document.getElementById('btn-start');
+            const btnStop = document.getElementById('btn-stop');
             
-            // --- NEW: Handle Start/Stop Button UI with animation ---
-            startBtn.disabled = true;
-            startBtn.innerHTML = "<span class='flex items-center justify-center'><svg class='animate-spin h-5 w-5 mr-3 text-white' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'><circle class='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' stroke-width='4'></circle><path class='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path></svg>RUNNING...</span>";
-            
-            // 1. Resize START button (w-full -> w-3/4)
-            startBtn.classList.remove('w-full'); 
-            startBtn.classList.add('w-3/4'); 
-            
-            // 2. Show STOP button (w-0 -> w-1/4, opacity/scale 0 -> 100)
-            stopBtn.disabled = false;
-            stopBtn.classList.remove('w-0', 'opacity-0', 'scale-0'); 
-            stopBtn.classList.add('w-1/4', 'opacity-100', 'scale-100'); 
-            // --- END NEW UI ---
-            
-            eventSource = new EventSource(`/api/stream?${params.toString()}`); // ASSIGN TO GLOBAL
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> PROCESSING...`;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            btn.disabled = true;
+            btnStop.classList.remove('hidden');
 
-            eventSource.onmessage = function(event) {
-                const newLog = document.createElement('div');
-                newLog.className = "mb-1 whitespace-pre-wrap transition-opacity duration-300"; 
-                
-                let isFinished = false;
+            const logBox = document.getElementById('log-container');
+            logBox.innerHTML = "";
+            document.getElementById('stat-success').innerText = "0";
+            document.getElementById('stat-fail').innerText = "0";
 
-                // --- UPDATED: Counter Logic ---
-                if (event.data.includes('✅ SUCCESS')) {
-                    newLog.classList.add('text-green-400');
-                    
-                    // Increment and update UI
-                    totalSuccessCounter++;
-                    totalAttemptsCounter++;
-                    document.getElementById('global-success-counter').innerText = totalSuccessCounter;
-                    document.getElementById('global-attempt-counter').innerText = totalAttemptsCounter;
-                    
-                } else if (event.data.includes('❌ FAIL') || event.data.includes('⚠️ ERROR')) {
-                    newLog.classList.add(event.data.includes('❌ FAIL') ? 'text-red-400' : 'text-orange-400');
-                    
-                    // Increment and update UI
-                    totalErrorsCounter++;
-                    totalAttemptsCounter++;
-                    document.getElementById('global-error-counter').innerText = totalErrorsCounter;
-                    document.getElementById('global-attempt-counter').innerText = totalAttemptsCounter;
+            showToast("System Started Successfully", "success");
 
-                } else if (event.data.includes('🏁 FINISHED')) {
-                    isFinished = true;
-                    newLog.classList.add('text-yellow-400', 'font-bold', 'mt-2');
-                } else {
-                    newLog.classList.add('text-slate-300');
+            if(evtSource) evtSource.close();
+            evtSource = new EventSource(`/api/stream?${params.toString()}`);
+            
+            evtSource.onmessage = (e) => {
+                const div = document.createElement('div');
+                div.innerText = "> " + e.data;
+                if(e.data.includes('SUCCESS')) {
+                    div.classList.add('text-emerald-400');
+                    let s = document.getElementById('stat-success'); s.innerText = parseInt(s.innerText)+1;
+                } else if(e.data.includes('FAIL')) {
+                    div.classList.add('text-red-400');
+                    let s = document.getElementById('stat-fail'); s.innerText = parseInt(s.innerText)+1;
+                } else if(e.data.includes('FINISHED') || e.data.includes('Stopped')) {
+                    div.classList.add('text-yellow-400', 'font-bold', 'border-t', 'border-slate-800', 'mt-2', 'pt-2');
+                    evtSource.close();
+                    btn.innerHTML = `<span class="relative z-10 flex items-center justify-center"><i class="fa-solid fa-play mr-2"></i> START SYSTEM</span>`;
+                    btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                    btn.disabled = false;
+                    btnStop.classList.add('hidden');
+                    showToast("Process Finished", "info");
                 }
-                // --- END UPDATED Counter Logic ---
-
-                newLog.innerText = `> ${event.data}`;
-                logContainer.appendChild(newLog);
-                
-                if (logContainer.children.length > MAX_LOGS) {
-                    logContainer.removeChild(logContainer.firstChild);
-                }
-
-                logContainer.scrollTop = logContainer.scrollHeight; 
-
-                if (isFinished) {
-                    stopProcess(true); // Use unified stop function
-                }
-            };
-
-            eventSource.onerror = function(err) {
-                stopProcess(false); // Use unified stop function for error
-            };
-        }
-
-        function clearLog() { document.getElementById('log-container').innerHTML = ""; }
-        
-        // ---------------------------------------------------
-        // 4. Cookie Consent & History Functions (UPDATED for animation and style)
-        // ---------------------------------------------------
-        function checkCookieConsent() {
-            const banner = document.getElementById('cookie-banner');
-            consentStatus = localStorage.getItem('cookieConsent');
-            
-            if (consentStatus === null) {
-                // Show banner by removing the class that hides it (translate-y-full)
-                banner.classList.remove('translate-y-full');
-            } else if (consentStatus === 'reject') {
-                // If rejected, log a warning
-                const logContainer = document.getElementById('log-container');
-                if (logContainer) {
-                    logContainer.innerHTML += "<div class='text-orange-400'>[INFO] Usage history logging is currently disabled.</div>";
-                }
-            }
-        }
-
-        function setCookieConsent(status) {
-            consentStatus = status;
-            localStorage.setItem('cookieConsent', status);
-            // Hide banner by adding the class that slides it out
-            document.getElementById('cookie-banner').classList.add('translate-y-full'); 
-            
-            if (status === 'reject') {
-                // Clear existing history upon rejection
-                localStorage.removeItem(HISTORY_KEY);
-            }
-        }
-        
-        function logUsage(status) {
-            if (consentStatus !== 'accept') return; // Only log if accepted
-
-            const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-            const newEntry = {
-                timestamp: new Date().toISOString(),
-                url: document.getElementById('url').value.substring(0, 50) + '...',
-                total: parseInt(document.getElementById('total').value),
-                success: totalSuccessCounter,
-                errors: totalErrorsCounter,
-                status: status
+                logBox.appendChild(div);
+                logBox.scrollTop = logBox.scrollHeight;
             };
             
-            history.unshift(newEntry); // Add to the beginning
-            // Keep history list manageable (max 20 entries)
-            if (history.length > 20) {
-                history.pop(); 
-            }
-            
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-        }
-
-        function clearHistory() {
-            localStorage.removeItem(HISTORY_KEY);
-            displayHistory(); // Refresh modal view
-        }
-
-        function displayHistory() {
-            const historyList = document.getElementById('history-list');
-            const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-            
-            if (history.length === 0) {
-                historyList.innerHTML = '<p class="text-slate-500 text-sm text-center p-4">ยังไม่มีประวัติการใช้งาน</p>';
-                return;
-            }
-
-            historyList.innerHTML = history.map(entry => {
-                // Use Thai locale for date formatting
-                const date = new Date(entry.timestamp).toLocaleString('th-TH', { 
-                    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-                });
-                
-                let statusText, statusBgClass, statusIcon;
-                if (entry.status === 'FINISHED') {
-                    statusText = 'เสร็จสิ้น';
-                    statusBgClass = 'bg-green-600';
-                    statusIcon = '✅';
-                } else {
-                    statusText = 'หยุดโดยผู้ใช้';
-                    statusBgClass = 'bg-red-600';
-                    statusIcon = '🛑';
-                }
-                
-                return `
-                    <div class="bg-slate-700 p-3 rounded-lg border border-slate-600 hover:border-indigo-500 transition-colors duration-200">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-xs font-bold text-slate-200 flex items-center">
-                                ${statusIcon} 
-                                <span class="ml-1 ${statusBgClass} text-white px-2 py-0.5 rounded-full text-[10px] shadow-md">${statusText}</span>
-                            </span>
-                            <span class="text-[10px] text-slate-400">${date}</span>
-                        </div>
-                        <p class="text-xs text-slate-400 truncate font-mono">URL: ${entry.url}</p>
-                        <div class="flex justify-start text-xs mt-2 space-x-4 pt-1 border-t border-slate-600">
-                            <span class="text-indigo-300 font-bold">พยายาม: <span class="text-base">${entry.total}</span></span>
-                            <span class="text-green-300 font-bold">สำเร็จ: <span class="text-base">${entry.success}</span></span>
-                            <span class="text-red-300 font-bold">ผิดพลาด: <span class="text-base">${entry.errors}</span></span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function showHistoryModal() {
-            if (consentStatus !== 'accept') {
-                alert("โปรดยอมรับคุกกี้เพื่อเปิดใช้งานการบันทึกประวัติการใช้งาน");
-                return;
-            }
-            
-            displayHistory();
-            const modal = document.getElementById('history-modal');
-            const content = document.getElementById('history-modal-content');
-
-            // Show modal container
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            
-            // Apply enter animation
-            content.classList.remove('modal-exit', 'modal-exit-active', 'modal-enter');
-            content.classList.add('modal-enter');
-            requestAnimationFrame(() => content.classList.add('modal-enter-active'));
-        }
-
-        function hideHistoryModal() {
-            const modal = document.getElementById('history-modal');
-            const content = document.getElementById('history-modal-content');
-
-            // Apply exit animation
-            content.classList.remove('modal-enter', 'modal-enter-active', 'modal-exit');
-            content.classList.add('modal-exit');
-            requestAnimationFrame(() => content.classList.add('modal-exit-active'));
-
-            // Hide modal container after animation
-            setTimeout(() => {
-                modal.classList.remove('flex');
-                modal.classList.add('hidden');
-            }, 300); // 300ms matches the transition duration
-        }
-
-        // ---------------------------------------------------
-        // 5. Ping Function (Unchanged)
-        // ---------------------------------------------------
-        function checkPing() {
-            const start = performance.now();
-            fetch('/') 
-                .then(response => {
-                    const duration = Math.round(performance.now() - start);
-                    const pingStatus = document.getElementById('ping-status');
-                    const pingDot = document.getElementById('ping-dot');
-
-                    pingStatus.innerText = `${duration} ms`;
-                    
-                    pingDot.classList.remove('ping-yellow', 'ping-red', 'ping-green');
-                    if (duration < 150) {
-                        pingDot.classList.add('ping-green');
-                    } else if (duration < 500) {
-                        pingDot.classList.add('ping-yellow');
-                    } else {
-                        pingDot.classList.add('ping-red');
-                    }
-                })
-                .catch(() => {
-                    document.getElementById('ping-status').innerText = 'Offline';
-                    document.getElementById('ping-dot').classList.remove('ping-yellow', 'ping-green');
-                    document.getElementById('ping-dot').classList.add('ping-red');
-                });
-        }
-        
-        // ---------------------------------------------------
-        // 6. Lanyard Discord Status (Unchanged)
-        // ---------------------------------------------------
-        function connectLanyard() {
-            const userId = "902739412172046427"; 
-            const ws = new WebSocket("wss://api.lanyard.rest/socket");
-
-            ws.onopen = () => {
-                ws.send(JSON.stringify({
-                    op: 2,
-                    d: { subscribe_to_ids: [userId] }
-                }));
-            };
-
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.op === 1 && data.d) {
-                    setInterval(() => {
-                        ws.send(JSON.stringify({ op: 3 }));
-                    }, data.d.heartbeat_interval);
-                }
-
-                if (data.t === "PRESENCE_UPDATE" || data.t === "INIT_STATE") {
-                    updateDiscordStatus(data.d);
-                }
-            };
-
-            ws.onerror = (error) => {
-                console.error("Lanyard WS Error:", error);
-                document.getElementById('discord-state-text').innerText = 'Connection Error';
-                document.getElementById('discord-status-dot').className = 'status-dot status-offline';
-                setTimeout(connectLanyard, 5000); 
-            };
-        }
-
-        function getAssetUrl(activity, assetKey) {
-            if (!assetKey) return null;
-
-            if (assetKey.startsWith('spotify:')) {
-                return `https://i.scdn.co/image/${assetKey.split(':')[1]}`;
-            }
-            if (assetKey.startsWith('mp:')) {
-                const activityId = activity.application_id;
-                return `https://cdn.discordapp.com/app-assets/${activityId}/${assetKey}.png`;
-            }
-            
-            return null;
-        }
-
-        function updateDiscordStatus(d) {
-            const usernameElement = document.getElementById('discord-username');
-            const stateTextElement = document.getElementById('discord-state-text');
-            const statusDotElement = document.getElementById('discord-status-dot');
-            const avatarElement = document.getElementById('discord-avatar');
-            const activityContainer = document.getElementById('discord-activity');
-            const activityNameElement = document.getElementById('discord-activity-name');
-            const activityDetailsElement = document.getElementById('discord-activity-details');
-            const activityImageElement = document.getElementById('activity-large-image');
-
-
-            const status = d.discord_status || 'offline';
-            let statusText = 'Offline';
-            let statusClass = 'status-offline';
-            let avatarUrl = 'https://cdn.discordapp.com/embed/avatars/0.png';
-
-            // 1. Update Username and Avatar
-            if (d.discord_user) {
-                const user = d.discord_user;
-                const discriminator = user.discriminator === '0' ? '' : `#${user.discriminator}`;
-                usernameElement.innerText = `${user.username}${discriminator}`;
-                
-                avatarUrl = user.avatar 
-                    ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
-                    : `https://cdn.discordapp.com/embed/avatars/${(user.discriminator === '0' ? parseInt(user.id) >> 22 : parseInt(user.discriminator)) % 5}.png`;
-            } else {
-                usernameElement.innerText = '902739412172046427 (Loading)';
-            }
-            avatarElement.src = avatarUrl;
-            
-            // 2. Update Main Status
-            switch (status) {
-                case 'online':
-                    statusText = 'Online';
-                    statusClass = 'status-online';
-                    break;
-                case 'idle':
-                    statusText = 'Idle (AFK)';
-                    statusClass = 'status-idle';
-                    break;
-                case 'dnd':
-                    statusText = 'Do Not Disturb';
-                    statusClass = 'status-dnd';
-                    break;
-                default:
-                    statusText = 'Offline';
-                    statusClass = 'status-offline';
-                    break;
-            }
-
-            stateTextElement.innerText = statusText;
-            statusDotElement.className = `status-dot ${statusClass}`;
-            stateTextElement.classList.remove('text-yellow-400', 'text-green-400', 'text-red-400');
-            stateTextElement.classList.add(status === 'online' ? 'text-green-400' : 'text-yellow-400');
-            
-            // 3. Update Activity (Playing/Listening)
-            activityContainer.classList.add('hidden');
-            activityImageElement.classList.add('hidden');
-            activityImageElement.src = '';
-            activityNameElement.innerText = '';
-            activityDetailsElement.innerText = '';
-
-            const mainActivity = d.activities 
-                ? d.activities.find(a => a.type === 0 || a.type === 2) 
-                : null;
-            
-            if (mainActivity) {
-                let activityName = '';
-                let activityDetails = '';
-
-                // A. ดึง Large Image
-                if (mainActivity.assets && mainActivity.assets.large_image) {
-                    const largeImageUrl = getAssetUrl(mainActivity, mainActivity.assets.large_image);
-                    if (largeImageUrl) {
-                        activityImageElement.src = largeImageUrl;
-                        activityImageElement.classList.remove('hidden');
-                    }
-                }
-
-                // B. จัดรูปแบบ Text
-                if (mainActivity.type === 0) { // Playing
-                    activityName = `🎮 Playing ${mainActivity.name}`;
-                    activityDetails = mainActivity.details || mainActivity.state || '';
-                } else if (mainActivity.type === 2) { // Listening (Spotify)
-                    activityName = `🎧 Listening to ${mainActivity.details}`; // Song Title
-                    activityDetails = `by ${mainActivity.state}`; // Artist
-                }
-
-                if (activityName) {
-                    activityNameElement.innerText = activityName;
-                    activityDetailsElement.innerText = activityDetails;
-                    activityContainer.classList.remove('hidden');
-                }
+            evtSource.onerror = () => {
+                evtSource.close();
+                btn.innerHTML = "RESTART";
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                btnStop.classList.add('hidden');
+                showToast("Connection Lost", "error");
             }
         }
-
-
-        // ---------------------------------------------------
-        // 7. Background Emoji Logic (Unchanged)
-        // ---------------------------------------------------
-        const EMOJIS = ['🚀', '✨', '💻', '💡', '🤖', '🔥', '⭐️', '⚡️', '✅', '📈', '🔒', '🌐', '📡', '⚙️', '💎', '🔑', '📊'];
-        const NUM_EMOJIS = 80; 
-        
-        function initEmojiBackground() {
-            const container = document.getElementById('emoji-bg-container');
-
-            for (let i = 0; i < NUM_EMOJIS; i++) {
-                const emoji = document.createElement('div');
-                emoji.className = 'emoji-item';
-                emoji.innerText = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
-
-                // สุ่มตำแหน่งเริ่มต้น (ซ้าย-ขวา) 
-                emoji.style.left = `${Math.random() * 100}%`; 
-                // สุ่มขนาด (เล็ก 20px - ใหญ่ 50px)
-                emoji.style.fontSize = `${Math.floor(Math.random() * 30) + 20}px`; 
-                // สุ่มดีเลย์ (เริ่มไม่พร้อมกัน) - ใช้ช่วงเวลาที่ยาวขึ้นเพื่อให้การลอยดูต่อเนื่อง
-                emoji.style.animationDelay = `-${Math.random() * 25}s`; 
-                
-                container.appendChild(emoji);
-            }
-        }
-        
-        // ---------------------------------------------------
-        // 8. Intro Animation Logic (Unchanged)
-        // ---------------------------------------------------
-        function hideSplashScreen() {
-            const splashScreen = document.getElementById('splash-screen');
-            const mainContent = document.getElementById('main-content');
-            
-            // ให้แอนิเมชันรันประมาณ 2.5-3 วินาที
-            setTimeout(() => {
-                splashScreen.style.opacity = '0';
-                mainContent.style.opacity = '1'; 
-                
-                // หลังจาก fade out เสร็จแล้ว ให้ซ่อน/ลบออกจาก DOM
-                setTimeout(() => {
-                    splashScreen.style.visibility = 'hidden';
-                    splashScreen.style.display = 'none'; 
-                }, 1000); // 1s matches the transition duration
-            }, 2500); // Wait 2.5 seconds before starting fade out
-        }
-
-
-        // --- Run Initial Functions on Load ---
-        document.addEventListener('DOMContentLoaded', () => {
-             // 1. Initialise Emoji Background
-             initEmojiBackground();
-             
-             // 2. Hide Splash Screen and show content
-             hideSplashScreen(); 
-
-             // 3. Ping check
-             setInterval(checkPing, 5000);
-             checkPing();
-             
-             // 4. Lanyard Connection
-             connectLanyard();
-
-             // 5. NEW: Check Cookie Consent
-             checkCookieConsent();
-        });
-
-        const messages = [
-          "⚔️ WIAYOUHI",
-          "✨ My name is Wia",
-          "🔥 I AM THANAWAT",
-          "💥 WEB BY THANAWAT.WIA",
-          "🧬 IG: Thanawat.wia"
-        ];
-        
-        const effects = ["typing", "glitch", "scroll", "wave"];
-        let currentMessage = 0;
-        let interval;
-        let animationInProgress = false;
-        
-        function startRandomEffect() {
-          if (animationInProgress) return;
-          animationInProgress = true;
-        
-          const effect = effects[Math.floor(Math.random() * effects.length)];
-          const message = messages[currentMessage];
-          currentMessage = (currentMessage + 1) % messages.length;
-        
-          if (effect === "typing") return typingEffect(message);
-          if (effect === "glitch") return glitchEffect(message);
-          if (effect === "scroll") return scrollEffect(message);
-          if (effect === "wave") return waveEffect(message);
-        }
-        
-        // Typing Effect
-        function typingEffect(text) {
-          let i = 0;
-          const step = () => {
-            document.title = text.substring(0, i) + "_";
-            i++;
-            if (i <= text.length) {
-              setTimeout(step, 60);
-            } else {
-              setTimeout(() => {
-                animationInProgress = false;
-                startRandomEffect();
-              }, 1500);
-            }
-          };
-          step();
-        }
-        
-        // Glitch Effect
-        function glitchEffect(text) {
-          const glitchChars = "!@#$%^&*()_+=<>?/|\\~";
-          let count = 0;
-          const max = 15;
-          const glitch = () => {
-            const glitched = text
-              .split("")
-              .map((c) => (Math.random() < 0.25 ? glitchChars[Math.floor(Math.random() * glitchChars.length)] : c))
-              .join("");
-            document.title = glitched;
-            count++;
-            if (count < max) {
-              setTimeout(glitch, 70);
-            } else {
-              document.title = text;
-              setTimeout(() => {
-                animationInProgress = false;
-                startRandomEffect();
-              }, 1500);
-            }
-          };
-          glitch();
-        }
-        
-        // Scroll Effect
-        // Scroll Effect
-function scrollEffect(text) {
-  let msg = "   " + text + "   ";
-  let i = 0;
-  let scrollCycles = 0;
-  const maxCycles = 3; // จำนวนรอบที่ต้องการ
-
-  const scroll = () => {
-    document.title = msg.substring(i) + msg.substring(0, i);
-    i = (i + 1) % msg.length;
-
-    if (i === 0) scrollCycles++; // เมื่อวนจบ 1 รอบ
-
-    if (scrollCycles < maxCycles) {
-      setTimeout(scroll, 120);
-    } else {
-      setTimeout(() => {
-        animationInProgress = false;
-        startRandomEffect();
-      }, 1000);
-    }
-  };
-  scroll();
-}
-
-        
-        // Wave Effect
-        function waveEffect(text) {
-          let index = 0;
-          const wave = () => {
-            let result = "";
-            for (let i = 0; i < text.length; i++) {
-              result += i === index ? text[i].toUpperCase() : text[i];
-            }
-            document.title = result;
-            index++;
-            if (index < text.length) {
-              setTimeout(wave, 100);
-            } else {
-              setTimeout(() => {
-                animationInProgress = false;
-                startRandomEffect();
-              }, 1200);
-            }
-          };
-          wave();
-        }
-        
-        startRandomEffect();
     </script>
 </body>
 </html>
