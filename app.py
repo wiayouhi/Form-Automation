@@ -44,7 +44,12 @@ def submission_worker(post_url, fbzx, page_history, entries_map, mode, delay):
             job_queue.task_done()
             break
 
-        time.sleep(delay)
+        # --- แก้ไข: ใช้ stop_event.wait แทน time.sleep ---
+        # ถ้ากดหยุดระหว่างรอ delay มันจะตื่นทันที ไม่ต้องรอให้ครบเวลา
+        if stop_event.wait(delay): 
+            job_queue.task_done()
+            break
+        # ---------------------------------------------
 
         payload = {
             "fvv": "1", 
