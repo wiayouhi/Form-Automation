@@ -488,153 +488,230 @@
     </div>
 
     <script>
-        // --- NEW: Custom Toast Notification System ---
+        // ==========================================
+        // 🔔 1. ADVANCED TOAST NOTIFICATION (MOBILE READY)
+        // ==========================================
         function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            
-            // Create toast element
-            const toast = document.createElement('div');
-            const colors = {
-                error: 'border-red-500 bg-red-500/10 text-red-200',
-                success: 'border-emerald-500 bg-emerald-500/10 text-emerald-200',
-                info: 'border-indigo-500 bg-indigo-500/10 text-indigo-200'
-            };
-            const icons = {
-                error: 'fa-circle-xmark',
-                success: 'fa-circle-check',
-                info: 'fa-circle-info'
-            };
-            
-            const colorClass = colors[type] || colors.info;
-            const iconClass = icons[type] || icons.info;
+            // 1. หา Container ถ้าไม่มีให้สร้างใหม่ (Auto-Create & Responsive Positioning)
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                // Mobile: บนสุดเต็มจอ / Desktop: ขวาบน
+                container.className = "fixed top-0 left-0 right-0 md:left-auto md:right-6 md:top-6 z-[9999] flex flex-col gap-2 p-4 pointer-events-none sm:max-w-[400px]";
+                document.body.appendChild(container);
+            }
 
-            toast.className = `toast-item glass-panel border-l-4 ${colorClass} p-4 rounded-r-lg shadow-lg flex items-center gap-3 min-w-[300px]`;
+            const toast = document.createElement('div');
+            
+            // 2. ธีมสีแบบ Neon Glow
+            const themes = {
+                error:   { border: 'border-rose-500',   bg: 'bg-rose-500/20', icon: 'fa-triangle-exclamation', text: 'text-rose-400',   shadow: 'shadow-rose-500/20' },
+                success: { border: 'border-emerald-500', bg: 'bg-emerald-500/20', icon: 'fa-circle-check',       text: 'text-emerald-400', shadow: 'shadow-emerald-500/20' },
+                info:    { border: 'border-indigo-500',    bg: 'bg-indigo-500/20',    icon: 'fa-circle-info',        text: 'text-indigo-400',    shadow: 'shadow-indigo-500/20' }
+            };
+            const s = themes[type] || themes.info;
+
+            // 3. Styling: Glassmorphism + Responsive Layout
+            toast.className = `
+                pointer-events-auto 
+                relative w-full 
+                flex items-center gap-4 p-4 
+                bg-slate-900/95 backdrop-blur-xl 
+                border-l-[4px] ${s.border} border-y border-r border-slate-700/50
+                rounded-xl shadow-2xl ${s.shadow}
+                transform transition-all duration-500 ease-[cubic-bezier(0.68,-0.55,0.27,1.55)] 
+                translate-y-[-50px] opacity-0 scale-95
+            `;
+
             toast.innerHTML = `
-                <i class="fa-solid ${iconClass} text-xl"></i>
-                <div class="flex-1">
-                    <h4 class="font-bold text-sm uppercase">${type}</h4>
-                    <p class="text-xs opacity-90">${message}</p>
+                <div class="shrink-0">
+                    <div class="w-10 h-10 rounded-full ${s.bg} flex items-center justify-center border border-white/5 shadow-inner">
+                        <i class="fa-solid ${s.icon} ${s.text} text-lg drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"></i>
+                    </div>
                 </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="font-bold text-[10px] uppercase tracking-widest ${s.text} mb-0.5 opacity-90">${type}</h4>
+                    <p class="text-sm font-medium text-slate-200 leading-snug break-words">${message}</p>
+                </div>
+                <button onclick="this.parentElement.classList.add('opacity-0','translate-x-full'); setTimeout(()=>this.parentElement.remove(), 300);" 
+                    class="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
             `;
 
             container.appendChild(toast);
 
-            // Remove after 3 seconds
+            // Trigger Animation Slide In
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-[-50px]', 'opacity-0', 'scale-95');
+            });
+
+            // Auto Remove logic (4 seconds)
             setTimeout(() => {
-                toast.classList.add('toast-exit');
-                setTimeout(() => toast.remove(), 400);
-            }, 3000);
+                if(toast.parentElement) {
+                    toast.classList.add('opacity-0', 'translate-x-[50px]', 'scale-95');
+                    setTimeout(() => toast.remove(), 500);
+                }
+            }, 4000);
         }
 
-        // --- 1. SYSTEM INIT & ANIMATION ---
+        // ==========================================
+        // 🚀 2. SYSTEM INIT & SMOOTH NAVIGATION
+        // ==========================================
         window.addEventListener('load', () => {
+            // Loader Animation
             setTimeout(() => {
                 const loader = document.getElementById('loader');
-                loader.style.opacity = '0';
+                if(loader) {
+                    loader.style.transition = 'opacity 0.5s ease';
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 500);
+                }
                 
-                // Trigger page entry animation when loader finishes
-                document.getElementById('section-home').classList.add('page-enter');
-                
-                setTimeout(() => loader.style.visibility = 'hidden', 800);
-            }, 1500);
+                // Page Entry Animation
+                const homeSection = document.getElementById('section-home');
+                if(homeSection) homeSection.classList.add('page-enter');
+            }, 1000);
         });
 
-        // --- 2. TAB NAVIGATION (With Transitions) ---
         function switchTab(tab) {
             const home = document.getElementById('section-home');
             const tool = document.getElementById('section-tool');
             
-            // Sidebar buttons
-            const navHome = document.getElementById('nav-home');
-            const navTool = document.getElementById('nav-tool');
-            
-            // Mobile buttons
-            const mobHome = document.getElementById('mob-nav-home');
-            const mobTool = document.getElementById('mob-nav-tool');
+            // Navbar Items (Desktop & Mobile)
+            const navItems = {
+                home: [document.getElementById('nav-home'), document.getElementById('mob-nav-home')],
+                tool: [document.getElementById('nav-tool'), document.getElementById('mob-nav-tool')]
+            };
 
-            // Determine active/inactive
-            let current, next;
+            const toggleActive = (items, isActive) => {
+                items.forEach(el => {
+                    if(el) isActive ? el.classList.add('active') : el.classList.remove('active');
+                });
+            };
+
             if(tab === 'home') {
-                if(!home.classList.contains('hidden')) return; // Already here
-                current = tool;
-                next = home;
+                if(!home.classList.contains('hidden')) return;
                 
-                // Update Buttons
-                navHome.classList.add('active'); navTool.classList.remove('active');
-                mobHome.classList.add('active'); mobTool.classList.remove('active');
+                // Animate Out Tool
+                tool.classList.remove('page-enter');
+                tool.classList.add('page-exit');
+
+                setTimeout(() => {
+                    tool.classList.add('hidden');
+                    tool.classList.remove('page-exit');
+                    
+                    home.classList.remove('hidden');
+                    // Force Reflow
+                    void home.offsetWidth;
+                    home.classList.add('page-enter');
+                }, 300);
+
+                toggleActive(navItems.home, true);
+                toggleActive(navItems.tool, false);
+
             } else {
                 if(!tool.classList.contains('hidden')) return;
-                current = home;
-                next = tool;
 
-                navHome.classList.remove('active'); navTool.classList.add('active');
-                mobHome.classList.remove('active'); mobTool.classList.add('active');
+                home.classList.remove('page-enter');
+                home.classList.add('page-exit');
+
+                setTimeout(() => {
+                    home.classList.add('hidden');
+                    home.classList.remove('page-exit');
+                    
+                    tool.classList.remove('hidden');
+                    void tool.offsetWidth;
+                    tool.classList.add('page-enter');
+                }, 300);
+
+                toggleActive(navItems.home, false);
+                toggleActive(navItems.tool, true);
             }
-
-            // Animation Logic
-            current.classList.remove('page-enter');
-            current.classList.add('page-exit');
-
-            setTimeout(() => {
-                current.classList.add('hidden');
-                current.classList.remove('page-exit');
-                
-                next.classList.remove('hidden');
-                next.classList.add('page-enter');
-            }, 300); // Matches CSS duration
         }
 
-        // --- 3. CLOCK & WEATHER & SERVER STATS ---
+        // ==========================================
+        // 📊 3. DASHBOARD STATS (Optimized)
+        // ==========================================
         function updateTime() {
             const now = new Date();
-            document.getElementById('clock-time').innerText = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
-            document.getElementById('clock-date').innerText = now.toLocaleDateString('en-US', {weekday:'short', day:'numeric', month:'short'});
-            document.getElementById('clock-mobile').innerText = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+            const timeStr = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+            
+            const elTime = document.getElementById('clock-time');
+            const elDate = document.getElementById('clock-date');
+            const elMob = document.getElementById('clock-mobile');
+
+            if(elTime) elTime.innerText = timeStr;
+            if(elDate) elDate.innerText = now.toLocaleDateString('en-US', {weekday:'short', day:'numeric', month:'short'});
+            if(elMob) elMob.innerText = timeStr;
         }
         setInterval(updateTime, 1000); updateTime();
 
-        // --- NEW: Real Server Stats Fetcher ---
         async function fetchServerStats() {
             try {
-                // This expects an endpoint like /api/stats returning { cpu: 45, ram: 60 }
-                // If API doesn't exist, it will fail silently or show default
                 const res = await fetch('/api/stats');
                 if(res.ok) {
                     const data = await res.json();
+                    const cpuBar = document.getElementById('cpu-bar');
                     
-                    document.getElementById('cpu-val').innerText = `${data.cpu}%`;
-                    document.getElementById('cpu-bar').style.width = `${data.cpu}%`;
+                    if(document.getElementById('cpu-val')) document.getElementById('cpu-val').innerText = `${data.cpu}%`;
+                    if(cpuBar) {
+                        cpuBar.style.width = `${data.cpu}%`;
+                        cpuBar.className = `h-full rounded-full transition-all duration-500 shadow-[0_0_10px_currentColor] ${data.cpu > 80 ? 'bg-rose-500 text-rose-500' : 'bg-indigo-500 text-indigo-500'}`;
+                    }
                     
-                    document.getElementById('ram-val').innerText = `${data.ram}%`;
-                    document.getElementById('ram-bar').style.width = `${data.ram}%`;
-                    
-                    // Optional: Color coding
-                    document.getElementById('cpu-bar').className = `h-full rounded-full transition-all duration-500 ${data.cpu > 80 ? 'bg-red-500' : 'bg-indigo-500'}`;
+                    if(document.getElementById('ram-val')) document.getElementById('ram-val').innerText = `${data.ram}%`;
+                    if(document.getElementById('ram-bar')) document.getElementById('ram-bar').style.width = `${data.ram}%`;
                 }
-            } catch(e) {
-                // Simulation for UI testing if no server (Remove this block in production if needed)
-                // const mockCpu = Math.floor(Math.random() * 30) + 10;
-                // const mockRam = Math.floor(Math.random() * 20) + 40;
-                // document.getElementById('cpu-val').innerText = `${mockCpu}%`;
-                // document.getElementById('cpu-bar').style.width = `${mockCpu}%`;
-                // document.getElementById('ram-val').innerText = `${mockRam}%`;
-                // document.getElementById('ram-bar').style.width = `${mockRam}%`;
-            }
+            } catch(e) {}
         }
-        // Update stats every 3 seconds
         setInterval(fetchServerStats, 3000);
 
         async function fetchWeather() {
             try {
                 const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=13.75&longitude=100.51&current_weather=true');
                 const data = await res.json();
-                document.getElementById('weather-temp').innerText = Math.round(data.current_weather.temperature);
-                document.getElementById('weather-desc').innerHTML = `<i class="fa-solid fa-wind mr-1"></i> ${data.current_weather.windspeed} km/h`;
+                if(document.getElementById('weather-temp')) document.getElementById('weather-temp').innerText = Math.round(data.current_weather.temperature);
+                if(document.getElementById('weather-desc')) document.getElementById('weather-desc').innerHTML = `<i class="fa-solid fa-wind mr-1"></i> ${data.current_weather.windspeed} km/h`;
             } catch(e) {}
         }
         fetchWeather();
 
-        // --- 4. DISCORD LANYARD ---
+        async function fetchPing() {
+            const start = Date.now();
+            const pingEl = document.getElementById('ping-val');
+            const dot = document.getElementById('ping-dot');
+
+            try {
+                await fetch('/ping'); 
+                const latency = Date.now() - start;
+                
+                if(pingEl) pingEl.innerText = `${latency} ms`;
+                
+                if(dot && pingEl) {
+                    if(latency < 100) {
+                        pingEl.className = "text-xs font-mono font-bold text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]";
+                        dot.className = "w-2.5 h-2.5 rounded-full animate-pulse bg-emerald-500 shadow-[0_0_10px_#10b981]";
+                    } else if (latency < 300) {
+                        pingEl.className = "text-xs font-mono font-bold text-yellow-400";
+                        dot.className = "w-2.5 h-2.5 rounded-full animate-pulse bg-yellow-500 shadow-[0_0_10px_#eab308]";
+                    } else {
+                        pingEl.className = "text-xs font-mono font-bold text-rose-400";
+                        dot.className = "w-2.5 h-2.5 rounded-full animate-pulse bg-rose-500 shadow-[0_0_10px_#f43f5e]";
+                    }
+                }
+            } catch(e) {
+                if(pingEl) pingEl.innerText = "Offline";
+                if(dot) dot.className = "w-2.5 h-2.5 rounded-full bg-slate-600";
+            }
+        }
+        setInterval(fetchPing, 2000);
+        fetchPing();
+
+        // ==========================================
+        // 🎮 4. DISCORD LANYARD INTEGRATION
+        // ==========================================
         const DISCORD_ID = "902739412172046427"; 
         const ws = new WebSocket("wss://api.lanyard.rest/socket");
         ws.onopen = () => ws.send(JSON.stringify({ op: 2, d: { subscribe_to_ids: [DISCORD_ID] } }));
@@ -657,7 +734,7 @@
                 }
             }
 
-            const statusColors = { online: 'bg-green-500', idle: 'bg-yellow-500', dnd: 'bg-red-500', offline: 'bg-gray-500' };
+            const statusColors = { online: 'bg-emerald-500', idle: 'bg-yellow-500', dnd: 'bg-rose-500', offline: 'bg-gray-500' };
             const color = statusColors[user.discord_status] || 'bg-gray-500';
             document.getElementById('discord-main-status').className = `absolute bottom-0 right-0 w-5 h-5 border-4 border-[#13151b] rounded-full ${color}`;
 
@@ -675,20 +752,202 @@
             }
         }
 
-        // --- 5. NEW: TAGS INPUT SYSTEM ---
+        // ==========================================
+        // ✨ 5. BEAUTIFUL ENTRY CARD SYSTEM
+        // ==========================================
+
+        // สร้าง Tag คำตอบ
         function createTagUI(containerId, value) {
             if(!value.trim()) return;
             const container = document.getElementById(containerId);
             const span = document.createElement('span');
-            span.className = "tag-chip inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/20 border border-indigo-500/40 rounded-lg text-sm text-indigo-200";
+            
+            span.className = "group animate-[scaleIn_0.2s_ease-out] inline-flex items-center gap-2 pl-3 pr-2 py-1.5 bg-slate-800 border border-indigo-500/30 rounded-lg text-sm text-indigo-100 hover:border-indigo-400 transition-colors shadow-sm cursor-default select-none tag-chip";
             span.dataset.value = value.trim();
             span.innerHTML = `
-                ${value} 
-                <button onclick="this.parentElement.remove()" class="text-indigo-400 hover:text-white transition-colors w-4 h-4 flex items-center justify-center rounded-full hover:bg-indigo-500/50">
-                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                <span class="font-mono text-xs opacity-80">${value}</span>
+                <button onclick="deleteTag(this)" class="w-5 h-5 flex items-center justify-center rounded-md text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
+                    <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
             `;
             container.appendChild(span);
+        }
+        
+        function deleteTag(btn) {
+            const tag = btn.closest('span');
+            tag.style.transform = 'scale(0.8) opacity(0)';
+            setTimeout(() => tag.remove(), 200);
+        }
+
+        // สร้างการ์ด (Ultimate Glass Card)
+        function createEntryCard(id, initialVal, isManual) {
+            const uid = Math.random().toString(36).substr(2, 9);
+            const card = document.createElement('div');
+            
+            card.className = "group relative bg-slate-800/40 backdrop-blur-md p-6 rounded-2xl border border-slate-700/50 hover:border-indigo-500/40 hover:bg-slate-800/60 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 ease-out mb-5 overflow-hidden";
+            card.id = `card-${uid}`;
+            
+            const idInputClass = isManual 
+                ? "bg-slate-900/50 border-b-2 border-indigo-500/50 text-indigo-300 placeholder-indigo-500/30 px-2 py-1 focus:border-indigo-400 focus:bg-slate-900 transition-all cursor-text pointer-events-auto" 
+                : "bg-transparent text-slate-400 border-none px-0 cursor-default pointer-events-none font-bold";
+
+            const labelIcon = isManual 
+                ? `<i class="fa-solid fa-pen-nib text-indigo-400 mr-2 animate-bounce"></i>` 
+                : `<i class="fa-brands fa-google text-slate-500 mr-2"></i>`;
+
+            card.innerHTML = `
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-indigo-500/10 transition-colors duration-500"></div>
+
+                <div class="flex justify-between items-start mb-5 relative z-10">
+                    <div class="flex flex-col gap-1 flex-1 mr-4">
+                        <label class="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-1 flex items-center">
+                            ${labelIcon} ${isManual ? 'MANUAL ENTRY ID' : 'FORM FIELD ID'}
+                        </label>
+                        <div class="flex items-center gap-3">
+                            <input value="${id || ''}" 
+                                class="text-sm font-mono tracking-wide w-full focus:outline-none rounded-md ${idInputClass}" 
+                                ${isManual ? '' : 'readonly'} 
+                                placeholder="entry.xxxxxxxxx">
+                        </div>
+                    </div>
+                    
+                    ${isManual ? `
+                    <button onclick="removeCard('card-${uid}')" 
+                        class="text-slate-500 hover:text-rose-400 bg-slate-800/50 hover:bg-rose-500/10 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 shadow-sm border border-transparent hover:border-rose-500/20"
+                        title="Remove this field">
+                        <i class="fa-solid fa-trash-can text-sm"></i>
+                    </button>` : ''}
+                </div>
+                
+                <div id="tags-${uid}" class="flex flex-wrap gap-2 mb-4 min-h-[50px] p-3 bg-slate-950/30 rounded-xl border border-dashed border-slate-700/50 transition-colors hover:border-indigo-500/30 relative">
+                     <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 only:opacity-100 transition-opacity duration-300">
+                        <div class="text-center">
+                            <i class="fa-solid fa-arrow-turn-down text-slate-600 mb-1 block"></i>
+                            <span class="text-xs text-slate-600 font-medium">Add answers below</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3 relative z-10">
+                    <div class="flex gap-2">
+                        <div class="relative flex-1 group/input">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-keyboard text-slate-500 group-focus-within/input:text-indigo-400 transition-colors"></i>
+                            </div>
+                            <input id="input-${uid}" type="text" 
+                                class="w-full bg-slate-900/60 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:bg-slate-900/90 focus:outline-none transition-all shadow-inner" 
+                                placeholder="Type answer & press Enter..."
+                                autocomplete="off"
+                                onkeypress="handleInputEnter(event, 'input-${uid}', 'tags-${uid}')">
+                        </div>
+                        
+                        <button onclick="toggleBulk('${uid}')" 
+                            class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-400 hover:text-indigo-300 px-4 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 hover:shadow-indigo-500/10 active:scale-95" 
+                            title="Bulk Import">
+                            <i class="fa-solid fa-list-ul"></i>
+                        </button>
+                    </div>
+
+                    <div id="bulk-wrapper-${uid}" class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-out">
+                        <div class="overflow-hidden">
+                            <div class="pt-2 pb-1">
+                                <div class="bg-slate-900/80 p-1 rounded-xl border border-slate-700/50">
+                                    <textarea id="text-bulk-${uid}" 
+                                        class="w-full bg-transparent border-none rounded-lg p-3 text-xs font-mono text-slate-300 h-24 focus:outline-none focus:ring-0 resize-none placeholder-slate-600 leading-relaxed" 
+                                        placeholder="Paste multiple answers here...&#10;One answer per line"></textarea>
+                                    <button onclick="processBulk('${uid}')" 
+                                        class="w-full py-2 mt-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-lg text-xs font-bold tracking-wide shadow-lg shadow-indigo-900/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 border border-white/10">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> PROCESS BULK DATA
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-700/30">
+                        <div class="flex items-center gap-3 opacity-70 group-hover:opacity-100 transition-opacity">
+                            <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700 text-pink-500 shadow-inner">
+                                <i class="fa-solid fa-fingerprint text-sm"></i>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-xs font-bold text-slate-300">Unique Mode</span>
+                                <span class="text-[10px] text-slate-500">Do not repeat answers</span>
+                            </div>
+                        </div>
+
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="unique-${uid}" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-700/50 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-pink-500 peer-checked:to-rose-500 peer-checked:after:bg-white peer-checked:after:border-white shadow-inner"></div>
+                        </label>
+                    </div>
+                </div>
+            `;
+            
+            if(isManual) {
+                setTimeout(() => {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const idInput = card.querySelector('input[placeholder*="entry."]');
+                    if(idInput) {
+                        idInput.focus();
+                        idInput.select(); 
+                    }
+                }, 200);
+            }
+
+            return { card, uid };
+        }
+
+        // ==========================================
+        // ⚙️ 6. LOGIC & HELPERS
+        // ==========================================
+
+        function removeCard(cardId) {
+            const el = document.getElementById(cardId);
+            if(el) {
+                el.style.transition = 'all 0.3s ease-in';
+                el.style.transform = 'scale(0.9) translateY(20px)';
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 300);
+            }
+        }
+
+        function toggleBulk(uid) {
+            const wrapper = document.getElementById(`bulk-wrapper-${uid}`);
+            const isClosed = wrapper.classList.contains('grid-rows-[0fr]');
+            
+            if (isClosed) {
+                wrapper.classList.remove('grid-rows-[0fr]');
+                wrapper.classList.add('grid-rows-[1fr]');
+                setTimeout(() => document.getElementById(`text-bulk-${uid}`).focus(), 150);
+            } else {
+                wrapper.classList.remove('grid-rows-[1fr]');
+                wrapper.classList.add('grid-rows-[0fr]');
+            }
+        }
+
+        function processBulk(uid) {
+            const textarea = document.getElementById(`text-bulk-${uid}`);
+            const lines = textarea.value.split('\n');
+            let count = 0;
+            
+            lines.forEach(line => {
+                if(line.trim()) {
+                    createTagUI(`tags-${uid}`, line.trim()); 
+                    count++;
+                }
+            });
+            
+            if(count > 0) {
+                textarea.value = "";
+                toggleBulk(uid);
+                showToast(`Added ${count} answers successfully!`, 'success');
+                
+                const inputBar = document.getElementById(`input-${uid}`);
+                inputBar.classList.add('!border-emerald-500', 'ring-2', 'ring-emerald-500/30');
+                setTimeout(() => {
+                     inputBar.classList.remove('!border-emerald-500', 'ring-2', 'ring-emerald-500/30');
+                }, 800);
+            }
         }
 
         function handleInputEnter(e, inputId, containerId) {
@@ -699,51 +958,25 @@
             }
         }
 
-        function manualAddTag(inputId, containerId) {
-            const input = document.getElementById(inputId);
-            createTagUI(containerId, input.value);
-            input.value = '';
-        }
-
-        function createEntryCard(id, initialVal, isManual) {
-            const uid = Math.random().toString(36).substr(2, 9);
-            const card = document.createElement('div');
-            card.className = "bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 hover:border-indigo-500/50 transition-all fade-in";
-            card.id = `card-${uid}`;
-            
-            card.innerHTML = `
-                <div class="flex justify-between items-center mb-3">
-                    <div class="flex items-center gap-2 flex-1">
-                        <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
-                        <input value="${id}" class="bg-transparent text-xs font-mono text-slate-400 w-full focus:outline-none" ${isManual ? '' : 'readonly'} placeholder="entry.xxxx">
-                    </div>
-                    ${isManual ? `<button onclick="document.getElementById('card-${uid}').remove()" class="text-slate-600 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>` : ''}
-                </div>
-                
-                <div id="tags-${uid}" class="flex flex-wrap gap-2 mb-3 min-h-[30px]"></div>
-                
-                <div class="flex gap-2">
-                    <input id="input-${uid}" type="text" 
-                        class="flex-1 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none text-white placeholder-slate-600" 
-                        placeholder="Type answer & press Enter..."
-                        onkeypress="handleInputEnter(event, 'input-${uid}', 'tags-${uid}')">
-                    <button onclick="manualAddTag('input-${uid}', 'tags-${uid}')" class="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white px-3 rounded-lg transition-colors">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                </div>
-            `;
-            
-            return { card, uid };
-        }
+        // ==========================================
+        // 📡 7. DATA & PROCESS CONTROL
+        // ==========================================
 
         async function fetchEntries() {
             const url = document.getElementById('url').value;
             const list = document.getElementById('entry-list');
             
-            // UPDATED: Use custom Toast instead of alert
-            if(!url) return showToast("Please enter a valid URL", "error");
+            if(!url) return showToast("Please enter a valid URL first", "error");
             
-            list.innerHTML = `<div class="text-center py-8 text-indigo-400 animate-pulse"><i class="fa-solid fa-satellite-dish fa-spin mb-2"></i><br>Scanning Form Structure...</div>`;
+            list.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 text-indigo-400 opacity-80">
+                    <div class="relative w-16 h-16 mb-4">
+                        <div class="absolute inset-0 border-4 border-indigo-500/30 rounded-full"></div>
+                        <div class="absolute inset-0 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    <span class="font-mono text-sm tracking-wider animate-pulse">SCANNING FORM STRUCTURE...</span>
+                </div>
+            `;
 
             try {
                 const res = await fetch('/api/parse-url', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({url}) });
@@ -751,51 +984,66 @@
                 list.innerHTML = "";
 
                 if(Object.keys(data.entries).length === 0) {
-                    list.innerHTML = `<div class="text-center py-8 text-red-400">No entries found.</div>`;
+                    list.innerHTML = `
+                        <div class="text-center py-10 bg-slate-800/30 rounded-xl border border-dashed border-slate-700">
+                            <i class="fa-solid fa-ghost text-4xl text-slate-600 mb-3"></i>
+                            <p class="text-slate-400">No input fields found.</p>
+                        </div>
+                    `;
                     return;
                 }
 
                 for(const [k, v] of Object.entries(data.entries)) {
                     const { card, uid } = createEntryCard(k, v, false);
                     list.appendChild(card);
-                    if(v) v.split(',').forEach(val => createTagUI(`tags-${uid}`, val));
+                    if(v) v.split(',').forEach((val, idx) => {
+                        setTimeout(() => createTagUI(`tags-${uid}`, val), idx * 50);
+                    });
                 }
-                showToast("Form Structure Loaded!", "success"); // Success Toast
+                showToast("Form Structure Loaded!", "success");
             } catch(e) { 
-                list.innerHTML = `<div class="text-center py-8 text-red-400">Error Loading Data</div>`;
+                list.innerHTML = `<div class="text-center py-8 text-rose-400 font-bold">Error Loading Data</div>`;
                 showToast("Failed to fetch form data", "error");
             }
         }
 
         function addManualEntry() {
-            const { card } = createEntryCard('', '', true);
-            document.getElementById('entry-list').appendChild(card);
+            const { card } = createEntryCard('', null, true);
+            const list = document.getElementById('entry-list');
+            if(list.innerText.includes('No input fields')) list.innerHTML = "";
+            list.appendChild(card);
         }
 
-        // --- 6. PROCESS CONTROL ---
         let evtSource;
 
         async function stopProcess() {
             await fetch('/api/stop', { method: 'POST' });
-            document.getElementById('btn-start').innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-2"></i> STOPPING...`;
+            const btn = document.getElementById('btn-start');
+            btn.innerHTML = `<span class="flex items-center"><i class="fa-solid fa-spinner fa-spin mr-2"></i> STOPPING...</span>`;
         }
 
         function startProcess() {
             const url = document.getElementById('url').value;
-            // UPDATED: Custom Toast
             if(!url) return showToast("URL is required to start", "error");
 
             const entries = {};
-            document.querySelectorAll('#entry-list > div').forEach(card => {
-                const entryId = card.querySelector('input[placeholder="entry.xxxx"]').value;
-                const tagSpans = card.querySelectorAll('.tag-chip');
+            document.querySelectorAll('#entry-list > div[id^="card-"]').forEach(card => {
+                const entryIdInput = card.querySelector('input[placeholder*="entry."]');
+                if(!entryIdInput) return;
+                
+                const entryId = entryIdInput.value;
+                const tagSpans = card.querySelectorAll('.tag-chip, span[data-value]');
                 const values = Array.from(tagSpans).map(span => span.dataset.value).join(',');
                 
-                if(entryId && values) entries[entryId] = values;
+                const uniqueCheckbox = card.querySelector('input[type="checkbox"]'); 
+                const isUnique = uniqueCheckbox ? uniqueCheckbox.checked : false;
+                
+                if(entryId && values) {
+                    entries[entryId] = { values: values, unique: isUnique };
+                }
             });
 
-            // UPDATED: Custom Toast
-            if(Object.keys(entries).length === 0) return showToast("Please add entries and answers", "error");
+            if(Object.keys(entries).length === 0) return showToast("Please add at least one entry and answer", "error");
 
             const params = new URLSearchParams({
                 url: url,
@@ -804,7 +1052,7 @@
                 delay: document.getElementById('delay').value,
                 pages: document.getElementById('pages').value,
                 entries: JSON.stringify(entries),
-                mode: 'R'
+                mode: 'R' 
             });
 
             const btn = document.getElementById('btn-start');
@@ -820,22 +1068,24 @@
             document.getElementById('stat-success').innerText = "0";
             document.getElementById('stat-fail').innerText = "0";
 
-            showToast("System Started Successfully", "success");
+            showToast("🚀 System Started Successfully", "success");
 
             if(evtSource) evtSource.close();
             evtSource = new EventSource(`/api/stream?${params.toString()}`);
             
             evtSource.onmessage = (e) => {
                 const div = document.createElement('div');
+                div.className = "mb-1 text-xs font-mono break-all opacity-0 animate-[fadeIn_0.2s_ease-out_forwards]";
                 div.innerText = "> " + e.data;
+                
                 if(e.data.includes('SUCCESS')) {
                     div.classList.add('text-emerald-400');
                     let s = document.getElementById('stat-success'); s.innerText = parseInt(s.innerText)+1;
                 } else if(e.data.includes('FAIL')) {
-                    div.classList.add('text-red-400');
+                    div.classList.add('text-rose-400');
                     let s = document.getElementById('stat-fail'); s.innerText = parseInt(s.innerText)+1;
                 } else if(e.data.includes('FINISHED') || e.data.includes('Stopped')) {
-                    div.classList.add('text-yellow-400', 'font-bold', 'border-t', 'border-slate-800', 'mt-2', 'pt-2');
+                    div.className = "mt-4 pt-2 border-t border-slate-700 text-yellow-400 font-bold text-center";
                     evtSource.close();
                     btn.innerHTML = `<span class="relative z-10 flex items-center justify-center"><i class="fa-solid fa-play mr-2"></i> START SYSTEM</span>`;
                     btn.classList.remove('opacity-75', 'cursor-not-allowed');
@@ -856,41 +1106,6 @@
                 showToast("Connection Lost", "error");
             }
         }
-        // --- ADD THIS: Ping / Latency Check ---
-        async function fetchPing() {
-            const start = Date.now();
-            try {
-                // เรียกไปที่ Backend (app.py มี route /ping อยู่แล้ว)
-                await fetch('/ping'); 
-                const latency = Date.now() - start;
-
-                // อัปเดตตัวเลข
-                const pingEl = document.getElementById('ping-val');
-                pingEl.innerText = `${latency} ms`;
-
-                // อัปเดตสีของ Dot และ Text ตามความเร็ว
-                const dot = document.getElementById('ping-dot');
-                
-                if(latency < 100) {
-                    pingEl.className = "text-xs font-mono font-bold text-emerald-400";
-                    dot.className = "w-3 h-3 rounded-full animate-pulse bg-emerald-500";
-                } else if (latency < 300) {
-                    pingEl.className = "text-xs font-mono font-bold text-yellow-400";
-                    dot.className = "w-3 h-3 rounded-full animate-pulse bg-yellow-500";
-                } else {
-                    pingEl.className = "text-xs font-mono font-bold text-red-400";
-                    dot.className = "w-3 h-3 rounded-full animate-pulse bg-red-500";
-                }
-
-            } catch(e) {
-                document.getElementById('ping-val').innerText = "Offline";
-                document.getElementById('ping-dot').className = "w-3 h-3 rounded-full bg-slate-600";
-            }
-        }
-        
-        // ให้เรียกทำงานทุกๆ 2 วินาที
-        setInterval(fetchPing, 2000);
-        fetchPing(); // เรียกครั้งแรกทันที
     </script>
 </body>
 </html>
