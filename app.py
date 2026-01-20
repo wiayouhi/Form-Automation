@@ -30,26 +30,22 @@ def fetch_fbzx(view_url):
     except:
         return None
 
+# ค้นหาฟังก์ชัน submission_worker แล้วแทนที่ด้วย code นี้
 def submission_worker(post_url, fbzx, page_history, entries_map, mode, delay):
     while not stop_event.is_set():
         try:
-            # ดึงงานจากคิว (timeout เพื่อให้เช็ค stop_event ได้เรื่อยๆ)
             idx = job_queue.get(timeout=1)
         except:
-            if job_queue.empty():
-                break
+            if job_queue.empty(): break
             continue
 
         if stop_event.is_set():
             job_queue.task_done()
             break
 
-        # --- แก้ไข: ใช้ stop_event.wait แทน time.sleep ---
-        # ถ้ากดหยุดระหว่างรอ delay มันจะตื่นทันที ไม่ต้องรอให้ครบเวลา
         if stop_event.wait(delay): 
             job_queue.task_done()
             break
-        # ---------------------------------------------
 
         payload = {
             "fvv": "1", 
@@ -59,15 +55,28 @@ def submission_worker(post_url, fbzx, page_history, entries_map, mode, delay):
             "partialResponse": "[null,null,\"" + fbzx + "\"]" 
         }
         
-        for eid, val in entries_map.items():
-            options = [v.strip() for v in val.split(',') if v.strip()]
+        # --- ส่วนที่แก้ไข Logic การเลือกคำตอบ ---
+        for eid, data in entries_map.items():
+            # รับข้อมูลเป็น dict: {'values': 'A,B,C', 'unique': True/False}
+            raw_val = data.get('values', '')
+            is_unique = data.get('unique', False)
+            
+            options = [v.strip() for v in raw_val.split(',') if v.strip()]
             if not options: continue
             
-            if mode == 'R':
-                answer = random.choice(options)
+            if is_unique:
+                # โหมดห้ามซ้ำ: เลือกตามลำดับงาน (Job ID)
+                # ถ้าจำนวนงานเกินคำตอบที่มี จะวนกลับมาใช้ตัวแรก (Modulo)
+                answer = options[idx % len(options)]
             else:
-                answer = options[idx % len(options)] 
+                # โหมดปกติ: สุ่ม หรือ เรียงตาม Mode หลัก
+                if mode == 'R':
+                    answer = random.choice(options)
+                else:
+                    answer = options[idx % len(options)]
+            
             payload[eid] = answer
+        # -------------------------------------
 
         try:
             r = requests.post(post_url, data=payload, timeout=10)
@@ -84,9 +93,7 @@ def submission_worker(post_url, fbzx, page_history, entries_map, mode, delay):
         log_queue.put(f"[{time.strftime('%H:%M:%S')}] #{idx+1} | {status}")
         job_queue.task_done()
 
-# =========================
-# Routes
-# =========================
+        
 @app.route('/ping', methods=['GET'])
 def ping():
     return jsonify({"status": "ok", "timestamp": time.time()})
